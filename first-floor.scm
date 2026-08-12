@@ -5,10 +5,6 @@
 ;; CONFIGURATION
 ;; ============================================================
 
-;; ------------------------------------------------------------
-;; Canvas
-;; ------------------------------------------------------------
-
 (define IMAGE-WIDTH  1080)
 (define IMAGE-HEIGHT 1080)
 
@@ -24,47 +20,30 @@
 (define BLACK-G 0)
 (define BLACK-B 0)
 
+;; Spectator marker, matching the blue "Είστε Εδώ" point
+(define BLUE-R 0)
+(define BLUE-G 70)
+(define BLUE-B 180)
+
 ;; ------------------------------------------------------------
 ;; Relative line width
-;;
-;; 0.009259 means:
-;;   0.009259 * 1080 ≈ 10 pixels
 ;; ------------------------------------------------------------
 
 (define RELATIVE-LINE-WIDTH (/ 10.0 1080.0))
 
-
 ;; ============================================================
 ;; FLOOR PLAN GEOMETRY
-;;
-;; All coordinates are normalized to the whole image:
-;;
-;;   X = 0.0  -> left edge
-;;   X = 1.0  -> right edge
-;;   Y = 0.0  -> top edge
-;;   Y = 1.0  -> bottom edge
-;;
-;; Each segment is:
-;;
-;;   (x1 y1 x2 y2)
-;;
-;; This means the geometry is independent of image resolution.
 ;; ============================================================
-
 
 ;; ------------------------------------------------------------
 ;; Building outline
 ;;
-;; Original coordinates:
-;;
-;; A = (80,  140)
-;; B = (400, 140)
-;; C = (400, 420)
-;; D = (340, 420)
-;; G = (150, 420)
-;; I = (80,  420)
-;;
-;; Converted to normalized coordinates for 1080x1080.
+;; A = (80,140)
+;; B = (400,140)
+;; C = (400,420)
+;; D = (340,420)
+;; G = (150,420)
+;; I = (80,420)
 ;; ------------------------------------------------------------
 
 (define BUILDING-OUTLINE
@@ -100,22 +79,14 @@
 
     ;; I -> A
     (list
-      (/ 80.0  IMAGE-WIDTH)
+      (/ 80.0 IMAGE-WIDTH)
       (/ 420.0 IMAGE-HEIGHT)
-      (/ 80.0  IMAGE-WIDTH)
+      (/ 80.0 IMAGE-WIDTH)
       (/ 140.0 IMAGE-HEIGHT))
   ))
 
-
 ;; ------------------------------------------------------------
 ;; Warehouse
-;;
-;; Original coordinates:
-;;
-;; D = (340, 420)
-;; E = (340, 510)
-;; F = (150, 510)
-;; G = (150, 420)
 ;; ------------------------------------------------------------
 
 (define WAREHOUSE-SEGMENTS
@@ -140,33 +111,139 @@
       (/ 150.0 IMAGE-WIDTH)
       (/ 510.0 IMAGE-HEIGHT)
       (/ 150.0 IMAGE-WIDTH)
-      (/ 440.0 IMAGE-HEIGHT))
-
-    ;; F -> G
-    (list
-      (/ 150.0 IMAGE-WIDTH)
-      (/ 510.0 IMAGE-HEIGHT)
-      (/ 150.0 IMAGE-WIDTH)
-      (/ 420.0 IMAGE-HEIGHT))
-
-    ;; D -> G
-    (list
-      (/ 340.0 IMAGE-WIDTH)
-      (/ 420.0 IMAGE-HEIGHT)
-      (/ 150.0 IMAGE-WIDTH)
       (/ 420.0 IMAGE-HEIGHT))
   ))
 
+;; ============================================================
+;; TWO ELEVATORS
+;;
+;; Based on the printed plan:
+;; - two elevator shafts side-by-side
+;; - positioned near the upper-right portion of the building
+;; - spectator point is directly below the right elevator
+;;
+;; Elevator 1:
+;;   left   = 275
+;;   right  = 325
+;;   top    = 190
+;;   bottom = 260
+;;
+;; Elevator 2:
+;;   left   = 325
+;;   right  = 375
+;;   top    = 190
+;;   bottom = 260
+;; ============================================================
 
-;; ------------------------------------------------------------
-;; Warehouse definition
-;; ------------------------------------------------------------
-
-(define WAREHOUSE
+(define ELEVATOR-SEGMENTS
   (list
-    (list GREEN-R GREEN-G GREEN-B)
-    WAREHOUSE-SEGMENTS))
 
+    ;; ----------------------------
+    ;; Elevator 1 - left
+    ;; ----------------------------
+
+    ;; top
+    (list
+      (/ 275.0 IMAGE-WIDTH)
+      (/ 190.0 IMAGE-HEIGHT)
+      (/ 325.0 IMAGE-WIDTH)
+      (/ 190.0 IMAGE-HEIGHT))
+
+    ;; right
+    (list
+      (/ 325.0 IMAGE-WIDTH)
+      (/ 190.0 IMAGE-HEIGHT)
+      (/ 325.0 IMAGE-WIDTH)
+      (/ 260.0 IMAGE-HEIGHT))
+
+    ;; bottom
+    (list
+      (/ 325.0 IMAGE-WIDTH)
+      (/ 260.0 IMAGE-HEIGHT)
+      (/ 275.0 IMAGE-WIDTH)
+      (/ 260.0 IMAGE-HEIGHT))
+
+    ;; left
+    (list
+      (/ 275.0 IMAGE-WIDTH)
+      (/ 260.0 IMAGE-HEIGHT)
+      (/ 275.0 IMAGE-WIDTH)
+      (/ 190.0 IMAGE-HEIGHT))
+
+
+    ;; ----------------------------
+    ;; Elevator 2 - right
+    ;; ----------------------------
+
+    ;; top
+    (list
+      (/ 325.0 IMAGE-WIDTH)
+      (/ 190.0 IMAGE-HEIGHT)
+      (/ 375.0 IMAGE-WIDTH)
+      (/ 190.0 IMAGE-HEIGHT))
+
+    ;; right
+    (list
+      (/ 375.0 IMAGE-WIDTH)
+      (/ 190.0 IMAGE-HEIGHT)
+      (/ 375.0 IMAGE-WIDTH)
+      (/ 260.0 IMAGE-HEIGHT))
+
+    ;; bottom
+    (list
+      (/ 375.0 IMAGE-WIDTH)
+      (/ 260.0 IMAGE-HEIGHT)
+      (/ 325.0 IMAGE-WIDTH)
+      (/ 260.0 IMAGE-HEIGHT))
+
+    ;; left / central dividing wall
+    (list
+      (/ 325.0 IMAGE-WIDTH)
+      (/ 190.0 IMAGE-HEIGHT)
+      (/ 325.0 IMAGE-WIDTH)
+      (/ 260.0 IMAGE-HEIGHT))
+  ))
+
+;; ============================================================
+;; ELEVATOR DOORS
+;;
+;; Small horizontal lines at the bottom of each elevator,
+;; representing the elevator entrance.
+;; ============================================================
+
+(define ELEVATOR-DOOR-SEGMENTS
+  (list
+
+    ;; Left elevator door
+    (list
+      (/ 290.0 IMAGE-WIDTH)
+      (/ 260.0 IMAGE-HEIGHT)
+      (/ 310.0 IMAGE-WIDTH)
+      (/ 260.0 IMAGE-HEIGHT))
+
+    ;; Right elevator door
+    (list
+      (/ 340.0 IMAGE-WIDTH)
+      (/ 260.0 IMAGE-HEIGHT)
+      (/ 360.0 IMAGE-WIDTH)
+      (/ 260.0 IMAGE-HEIGHT))
+  ))
+
+;; ============================================================
+;; SPECTATOR / "YOU ARE HERE" POINT
+;;
+;; Positioned immediately below the right elevator, similar
+;; to the blue point in the photographed floor plan.
+;; ============================================================
+
+(define SPECTATOR-X
+  (/ 350.0 IMAGE-WIDTH))
+
+(define SPECTATOR-Y
+  (/ 275.0 IMAGE-HEIGHT))
+
+;; Radius in pixels
+(define SPECTATOR-RADIUS 12)
 
 ;; ============================================================
 ;; COLOR HELPERS
@@ -184,48 +261,19 @@
 (define (line-color-b c)
   (list-ref c 2))
 
-
-;; ============================================================
-;; WAREHOUSE DATATYPE
-;; ============================================================
-
-;; warehouse = (color segments)
-
-(define (make-warehouse color segments)
-  (list color segments))
-
-(define (warehouse-color w)
-  (list-ref w 0))
-
-(define (warehouse-segments w)
-  (list-ref w 1))
-
-
 ;; ============================================================
 ;; COORDINATE TRANSFORMATION
 ;; ============================================================
 
-;; Convert a normalized X coordinate into a pixel coordinate.
-
 (define (px x)
   (* x IMAGE-WIDTH))
-
-
-;; Convert a normalized Y coordinate into a pixel coordinate.
 
 (define (py y)
   (* y IMAGE-HEIGHT))
 
-
-;; Convert relative line width into pixels.
-;;
-;; We use the smaller canvas dimension so that the line thickness
-;; behaves sensibly even when width and height are different.
-
 (define (line-width-pixels)
   (* RELATIVE-LINE-WIDTH
      (min IMAGE-WIDTH IMAGE-HEIGHT)))
-
 
 ;; ============================================================
 ;; DRAWING
@@ -236,18 +284,21 @@
 ;; ------------------------------------------------------------
 
 (define (draw-straight-line drawable x1 y1 x2 y2 width)
-  (let* (
-    (stroke
-      (vector
-        x1 y1
-        x2 y2))
-    )
-    (gimp-context-set-brush-size width)
-    (gimp-paintbrush-default drawable stroke)))
 
+  (let* (
+      (stroke
+        (vector
+          x1 y1
+          x2 y2)))
+
+    (gimp-context-set-brush-size width)
+
+    (gimp-paintbrush-default
+      drawable
+      stroke)))
 
 ;; ------------------------------------------------------------
-;; Draw a list of normalized segments
+;; Draw segment list
 ;; ------------------------------------------------------------
 
 (define (draw-segment-list drawable segments width)
@@ -257,13 +308,12 @@
       #t
 
       (let* (
-        (s  (car segments))
+          (s  (car segments))
 
-        (x1 (list-ref s 0))
-        (y1 (list-ref s 1))
-        (x2 (list-ref s 2))
-        (y2 (list-ref s 3))
-        )
+          (x1 (list-ref s 0))
+          (y1 (list-ref s 1))
+          (x2 (list-ref s 2))
+          (y2 (list-ref s 3)))
 
         (draw-straight-line
           drawable
@@ -278,32 +328,77 @@
           (cdr segments)
           width))))
 
+;; ============================================================
+;; DRAW WAREHOUSE
+;; ============================================================
 
-;; ------------------------------------------------------------
-;; Draw warehouse
-;; ------------------------------------------------------------
+(define (draw-warehouse drawable color width)
 
-(define (draw-warehouse drawable warehouse width)
+  (gimp-context-set-foreground
+    (list
+      (line-color-r color)
+      (line-color-g color)
+      (line-color-b color)))
 
-  (let* (
-    (color
-      (warehouse-color warehouse))
+  (draw-segment-list
+    drawable
+    WAREHOUSE-SEGMENTS
+    width))
 
-    (segments
-      (warehouse-segments warehouse))
-    )
+;; ============================================================
+;; DRAW ELEVATORS
+;; ============================================================
 
-    (gimp-context-set-foreground
-      (list
-        (line-color-r color)
-        (line-color-g color)
-        (line-color-b color)))
+(define (draw-elevators drawable color width)
 
-    (draw-segment-list
+  ;; Elevator boxes
+  (gimp-context-set-foreground
+    (list
+      (line-color-r color)
+      (line-color-g color)
+      (line-color-b color)))
+
+  (draw-segment-list
+    drawable
+    ELEVATOR-SEGMENTS
+    width)
+
+  ;; Elevator doors
+  (draw-segment-list
+    drawable
+    ELEVATOR-DOOR-SEGMENTS
+    width))
+
+;; ============================================================
+;; DRAW SPECTATOR POINT
+;; ============================================================
+
+(define (draw-spectator-point drawable)
+
+  (gimp-context-set-foreground
+    (list
+      BLUE-R
+      BLUE-G
+      BLUE-B))
+
+  ;; Get the image directly from the drawable.
+  (let ((image
+          (gimp-item-get-image drawable)))
+
+    ;; Draw a filled circle
+    (gimp-image-select-ellipse
+      image
+      (- (px SPECTATOR-X) SPECTATOR-RADIUS)
+      (- (py SPECTATOR-Y) SPECTATOR-RADIUS)
+      (* 2 SPECTATOR-RADIUS)
+      (* 2 SPECTATOR-RADIUS))
+
+    (gimp-edit-fill
       drawable
-      segments
-      width)))
+      FILL-FOREGROUND)
 
+    (gimp-selection-none
+      image)))
 
 ;; ============================================================
 ;; MAIN
@@ -315,67 +410,57 @@
 
   (let* (
 
-    ;; --------------------------------------------------------
-    ;; Create image
-    ;; --------------------------------------------------------
+      ;; ------------------------------------------------------
+      ;; Create image
+      ;; ------------------------------------------------------
 
-    (image
-      (gimp-image-new
-        IMAGE-WIDTH
-        IMAGE-HEIGHT
-        RGB))
+      (image
+        (gimp-image-new
+          IMAGE-WIDTH
+          IMAGE-HEIGHT
+          RGB))
 
-    ;; --------------------------------------------------------
-    ;; Create drawing layer
-    ;; --------------------------------------------------------
+      ;; ------------------------------------------------------
+      ;; Create drawing layer
+      ;; ------------------------------------------------------
 
-    (layer
-      (gimp-layer-new
-        image
-        "Building Outline"
-        IMAGE-WIDTH
-        IMAGE-HEIGHT
-        RGBA-IMAGE
-        100
-        LAYER-MODE-NORMAL))
+      (layer
+        (gimp-layer-new
+          image
+          "Building Outline"
+          IMAGE-WIDTH
+          IMAGE-HEIGHT
+          RGBA-IMAGE
+          100
+          LAYER-MODE-NORMAL))
 
-    ;; --------------------------------------------------------
-    ;; Colors
-    ;; --------------------------------------------------------
+      ;; ------------------------------------------------------
+      ;; Colors
+      ;; ------------------------------------------------------
 
-    (green-line
-      (make-line-color
-        GREEN-R
-        GREEN-G
-        GREEN-B))
+      (green-line
+        (make-line-color
+          GREEN-R
+          GREEN-G
+          GREEN-B))
 
-    (black-line
-      (make-line-color
-        BLACK-R
-        BLACK-G
-        BLACK-B))
+      (black-line
+        (make-line-color
+          BLACK-R
+          BLACK-G
+          BLACK-B))
 
-    ;; --------------------------------------------------------
-    ;; Warehouse
-    ;; --------------------------------------------------------
+      ;; ------------------------------------------------------
+      ;; Line width
+      ;; ------------------------------------------------------
 
-    (warehouse
-      (make-warehouse
-        green-line
-        WAREHOUSE-SEGMENTS))
-
-    ;; --------------------------------------------------------
-    ;; Line width
-    ;; --------------------------------------------------------
-
-    (line-width
-      (line-width-pixels))
+      (line-width
+        (line-width-pixels))
     )
 
-
-    ;; ========================================================
-    ;; IMAGE INITIALIZATION
-    ;; ========================================================
+    ;; --------------------------------------------------------
+    ;; Insert layer
+    ;; --------------------------------------------------------
 
     (gimp-image-insert-layer
       image
@@ -384,42 +469,54 @@
       0)
 
     ;; White background
-
     (gimp-drawable-fill
       layer
       FILL-WHITE)
 
-    ;; Default GIMP settings
-
+    ;; Default settings
     (gimp-context-set-defaults)
     (gimp-context-set-default-colors)
 
-
-    ;; ========================================================
-    ;; DRAW
-    ;; ========================================================
-
-    ;; Building outline
+    ;; --------------------------------------------------------
+    ;; BUILDING
+    ;; --------------------------------------------------------
 
     (draw-building-outline
       layer
-      black-line)
+      black-line
+      line-width)
 
-    ;; Warehouse
+    ;; --------------------------------------------------------
+    ;; WAREHOUSE
+    ;; --------------------------------------------------------
 
     (draw-warehouse
       layer
-      warehouse
+      green-line
       line-width)
 
+    ;; --------------------------------------------------------
+    ;; TWO ELEVATORS
+    ;; --------------------------------------------------------
 
-    ;; ========================================================
-    ;; DISPLAY
-    ;; ========================================================
+    (draw-elevators
+      layer
+      black-line
+      line-width)
+
+    ;; --------------------------------------------------------
+    ;; SPECTATOR POINT
+    ;; --------------------------------------------------------
+
+    (draw-spectator-point
+      layer)
+
+    ;; --------------------------------------------------------
+    ;; Display
+    ;; --------------------------------------------------------
 
     (gimp-display-new image)
   ))
-
 
 ;; ============================================================
 ;; RUN
