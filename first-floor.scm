@@ -369,6 +369,23 @@
     ELEVATOR-DOOR-SEGMENTS
     width))
 
+;; ------------------------------------------------------------
+;; Draw building outline
+;; ------------------------------------------------------------
+
+(define (draw-building-outline drawable black-color)
+
+  (gimp-context-set-foreground
+    (list
+      (line-color-r black-color)
+      (line-color-g black-color)
+      (line-color-b black-color)))
+
+  (draw-segment-list
+    drawable
+    BUILDING-OUTLINE
+    (line-width-pixels)))
+
 ;; ============================================================
 ;; DRAW SPECTATOR POINT
 ;; ============================================================
@@ -385,17 +402,17 @@
   (let ((image
           (gimp-item-get-image drawable)))
 
-    ;; Draw a filled circle
-    (gimp-image-select-ellipse
-      image
-      (- (px SPECTATOR-X) SPECTATOR-RADIUS)
-      (- (py SPECTATOR-Y) SPECTATOR-RADIUS)
-      (* 2 SPECTATOR-RADIUS)
-      (* 2 SPECTATOR-RADIUS))
+(gimp-image-select-ellipse
+  image
+  CHANNEL-OP-REPLACE
+  (- (px SPECTATOR-X) SPECTATOR-RADIUS)
+  (- (py SPECTATOR-Y) SPECTATOR-RADIUS)
+  (* 2 SPECTATOR-RADIUS)
+  (* 2 SPECTATOR-RADIUS))
 
-    (gimp-edit-fill
-      drawable
-      FILL-FOREGROUND)
+(gimp-drawable-edit-fill
+  drawable
+  FILL-FOREGROUND)
 
     (gimp-selection-none
       image)))
@@ -483,8 +500,7 @@
 
     (draw-building-outline
       layer
-      black-line
-      line-width)
+      black-line)
 
     ;; --------------------------------------------------------
     ;; WAREHOUSE
@@ -524,19 +540,3 @@
 
 (script-fu-draw-building-outline)
 
-;; ------------------------------------------------------------
-;; Draw building outline
-;; ------------------------------------------------------------
-
-(define (draw-building-outline drawable black-color)
-
-  (gimp-context-set-foreground
-    (list
-      (line-color-r black-color)
-      (line-color-g black-color)
-      (line-color-b black-color)))
-
-  (draw-segment-list
-    drawable
-    BUILDING-OUTLINE
-    (line-width-pixels)))
