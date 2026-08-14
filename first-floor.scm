@@ -20,7 +20,7 @@
 (define BLACK-G 0)
 (define BLACK-B 0)
 
-;; Spectator marker, matching the blue "Είστε Εδώ" point
+;; Spectator marker, matching the blue "Ξ•Ξ―ΟƒΟ„Ξ΅ Ξ•Ξ΄ΟŽ" point
 (define BLUE-R 0)
 (define BLUE-G 70)
 (define BLUE-B 180)
@@ -35,122 +35,224 @@
 ;; FLOOR PLAN GEOMETRY
 ;; ============================================================
 
+;; ------------------------------------------------------------
+;; Building outline
+;;
+;; A = (80,140)
+;; B = (400,140)
+;; C = (400,420)
+;; D = (340,420)
+;; G = (150,420)
+;; I = (80,420)
+;; ------------------------------------------------------------
+
 (define BUILDING-OUTLINE
   (list
+
     ;; A -> B
-    (list (/ 80.0 IMAGE-WIDTH) (/ 140.0 IMAGE-HEIGHT) (/ 400.0 IMAGE-WIDTH) (/ 140.0 IMAGE-HEIGHT))
+    (list
+      (/ 80.0  IMAGE-WIDTH)
+      (/ 140.0 IMAGE-HEIGHT)
+      (/ 400.0 IMAGE-WIDTH)
+      (/ 140.0 IMAGE-HEIGHT))
+
     ;; B -> C
-    (list (/ 400.0 IMAGE-WIDTH) (/ 140.0 IMAGE-HEIGHT) (/ 400.0 IMAGE-WIDTH) (/ 420.0 IMAGE-HEIGHT))
+    (list
+      (/ 400.0 IMAGE-WIDTH)
+      (/ 140.0 IMAGE-HEIGHT)
+      (/ 400.0 IMAGE-WIDTH)
+      (/ 420.0 IMAGE-HEIGHT))
+
     ;; C -> D
-    (list (/ 400.0 IMAGE-WIDTH) (/ 420.0 IMAGE-HEIGHT) (/ 340.0 IMAGE-WIDTH) (/ 420.0 IMAGE-HEIGHT))
+    (list
+      (/ 400.0 IMAGE-WIDTH)
+      (/ 420.0 IMAGE-HEIGHT)
+      (/ 340.0 IMAGE-WIDTH)
+      (/ 420.0 IMAGE-HEIGHT))
+
     ;; G -> H
-    (list (/ 150.0 IMAGE-WIDTH) (/ 420.0 IMAGE-HEIGHT) (/ 80.0 IMAGE-WIDTH) (/ 420.0 IMAGE-HEIGHT))
+    (list
+      (/ 150.0 IMAGE-WIDTH)
+      (/ 420.0 IMAGE-HEIGHT)
+      (/ 80.0 IMAGE-WIDTH)
+      (/ 420.0 IMAGE-HEIGHT))
+
     ;; I -> A
-    (list (/ 80.0 IMAGE-WIDTH) (/ 420.0 IMAGE-HEIGHT) (/ 80.0 IMAGE-WIDTH) (/ 140.0 IMAGE-HEIGHT))
+    (list
+      (/ 80.0 IMAGE-WIDTH)
+      (/ 420.0 IMAGE-HEIGHT)
+      (/ 80.0 IMAGE-WIDTH)
+      (/ 140.0 IMAGE-HEIGHT))
   ))
+
+;; ------------------------------------------------------------
+;; Warehouse
+;; ------------------------------------------------------------
 
 (define WAREHOUSE-SEGMENTS
   (list
+
     ;; D -> E
-    (list (/ 340.0 IMAGE-WIDTH) (/ 420.0 IMAGE-HEIGHT) (/ 340.0 IMAGE-WIDTH) (/ 510.0 IMAGE-HEIGHT))
+    (list
+      (/ 340.0 IMAGE-WIDTH)
+      (/ 420.0 IMAGE-HEIGHT)
+      (/ 340.0 IMAGE-WIDTH)
+      (/ 510.0 IMAGE-HEIGHT))
+
     ;; E -> F
-    (list (/ 340.0 IMAGE-WIDTH) (/ 510.0 IMAGE-HEIGHT) (/ 150.0 IMAGE-WIDTH) (/ 510.0 IMAGE-HEIGHT))
+    (list
+      (/ 340.0 IMAGE-WIDTH)
+      (/ 510.0 IMAGE-HEIGHT)
+      (/ 150.0 IMAGE-WIDTH)
+      (/ 510.0 IMAGE-HEIGHT))
+
     ;; F -> G
-    (list (/ 150.0 IMAGE-WIDTH) (/ 510.0 IMAGE-HEIGHT) (/ 150.0 IMAGE-WIDTH) (/ 420.0 IMAGE-HEIGHT))
+    (list
+      (/ 150.0 IMAGE-WIDTH)
+      (/ 510.0 IMAGE-HEIGHT)
+      (/ 150.0 IMAGE-WIDTH)
+      (/ 420.0 IMAGE-HEIGHT))
   ))
 
 ;; ============================================================
-;; TWO ELEVATORS (Vertical Rectangles)
+;; TWO ELEVATORS
+;;
+;; Corrected size:
+;; Original script: 50 x 50 px
+;; 8x smaller:      6.25 x 6.25 px
+;; 2x bigger:      12.5 x 12.5 px
+;;
+;; Centers remain at the same relative positions as before.
 ;; ============================================================
 
-(define ELEVATOR-CENTER-1-X 285.0)
-(define ELEVATOR-CENTER-2-X 325.0)
-(define ELEVATOR-CENTER-Y   385.0)
+(define ELEVATOR-CENTER-1-X 265.0)
+(define ELEVATOR-CENTER-1-Y 455.0)
 
-(define ELEVATOR-HALF-WIDTH  15.0)
-(define ELEVATOR-HALF-HEIGHT 25.0)
+(define ELEVATOR-CENTER-2-X 315.0)
+(define ELEVATOR-CENTER-2-Y 455.0)
+
+(define ELEVATOR-HALF-SIZE 6.25)
 
 (define ELEVATOR-SEGMENTS
   (list
+
     ;; ----------------------------
     ;; Elevator 1 - left
     ;; ----------------------------
-    (list (/ (- ELEVATOR-CENTER-1-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (- ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT)
-          (/ (+ ELEVATOR-CENTER-1-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (- ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT))
 
-    (list (/ (+ ELEVATOR-CENTER-1-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (- ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT)
-          (/ (+ ELEVATOR-CENTER-1-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT))
+    ;; top
+    (list
+      (/ (- ELEVATOR-CENTER-1-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (- ELEVATOR-CENTER-1-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT)
+      (/ (+ ELEVATOR-CENTER-1-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (- ELEVATOR-CENTER-1-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT))
 
-    (list (/ (+ ELEVATOR-CENTER-1-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT)
-          (/ (- ELEVATOR-CENTER-1-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT))
+    ;; right
+    (list
+      (/ (+ ELEVATOR-CENTER-1-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (- ELEVATOR-CENTER-1-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT)
+      (/ (+ ELEVATOR-CENTER-1-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (+ ELEVATOR-CENTER-1-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT))
 
-    (list (/ (- ELEVATOR-CENTER-1-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT)
-          (/ (- ELEVATOR-CENTER-1-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (- ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT))
+    ;; bottom
+    (list
+      (/ (+ ELEVATOR-CENTER-1-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (+ ELEVATOR-CENTER-1-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT)
+      (/ (- ELEVATOR-CENTER-1-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (+ ELEVATOR-CENTER-1-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT))
+
+    ;; left
+    (list
+      (/ (- ELEVATOR-CENTER-1-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (+ ELEVATOR-CENTER-1-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT)
+      (/ (- ELEVATOR-CENTER-1-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (- ELEVATOR-CENTER-1-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT))
+
 
     ;; ----------------------------
     ;; Elevator 2 - right
     ;; ----------------------------
-    (list (/ (- ELEVATOR-CENTER-2-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (- ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT)
-          (/ (+ ELEVATOR-CENTER-2-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (- ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT))
 
-    (list (/ (+ ELEVATOR-CENTER-2-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (- ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT)
-          (/ (+ ELEVATOR-CENTER-2-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT))
+    ;; top
+    (list
+      (/ (- ELEVATOR-CENTER-2-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (- ELEVATOR-CENTER-2-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT)
+      (/ (+ ELEVATOR-CENTER-2-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (- ELEVATOR-CENTER-2-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT))
 
-    (list (/ (+ ELEVATOR-CENTER-2-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT)
-          (/ (- ELEVATOR-CENTER-2-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT))
+    ;; right
+    (list
+      (/ (+ ELEVATOR-CENTER-2-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (- ELEVATOR-CENTER-2-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT)
+      (/ (+ ELEVATOR-CENTER-2-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (+ ELEVATOR-CENTER-2-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT))
 
-    (list (/ (- ELEVATOR-CENTER-2-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (- ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT)
-          (/ (- ELEVATOR-CENTER-2-X ELEVATOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT))
+    ;; bottom
+    (list
+      (/ (+ ELEVATOR-CENTER-2-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (+ ELEVATOR-CENTER-2-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT)
+      (/ (- ELEVATOR-CENTER-2-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (+ ELEVATOR-CENTER-2-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT))
+
+    ;; left / dividing wall
+    (list
+      (/ (- ELEVATOR-CENTER-2-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (- ELEVATOR-CENTER-2-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT)
+      (/ (- ELEVATOR-CENTER-2-X ELEVATOR-HALF-SIZE) IMAGE-WIDTH)
+      (/ (+ ELEVATOR-CENTER-2-Y ELEVATOR-HALF-SIZE) IMAGE-HEIGHT))
   ))
+
 
 ;; ============================================================
 ;; ELEVATOR DOORS
 ;; ============================================================
 
-(define ELEVATOR-DOOR-HALF-WIDTH 8.0)
+(define ELEVATOR-DOOR-HALF-WIDTH 3.0)
 
 (define ELEVATOR-DOOR-SEGMENTS
   (list
+
     ;; Left elevator door
-    (list (/ (- ELEVATOR-CENTER-1-X ELEVATOR-DOOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT)
-          (/ (+ ELEVATOR-CENTER-1-X ELEVATOR-DOOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT))
+    (list
+      (/ (- ELEVATOR-CENTER-1-X ELEVATOR-DOOR-HALF-WIDTH)
+         IMAGE-WIDTH)
+      (/ (+ ELEVATOR-CENTER-1-Y ELEVATOR-HALF-SIZE)
+         IMAGE-HEIGHT)
+      (/ (+ ELEVATOR-CENTER-1-X ELEVATOR-DOOR-HALF-WIDTH)
+         IMAGE-WIDTH)
+      (/ (+ ELEVATOR-CENTER-1-Y ELEVATOR-HALF-SIZE)
+         IMAGE-HEIGHT))
 
     ;; Right elevator door
-    (list (/ (- ELEVATOR-CENTER-2-X ELEVATOR-DOOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT)
-          (/ (+ ELEVATOR-CENTER-2-X ELEVATOR-DOOR-HALF-WIDTH) IMAGE-WIDTH)
-          (/ (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT))
+    (list
+      (/ (- ELEVATOR-CENTER-2-X ELEVATOR-DOOR-HALF-WIDTH)
+         IMAGE-WIDTH)
+      (/ (+ ELEVATOR-CENTER-2-Y ELEVATOR-HALF-SIZE)
+         IMAGE-HEIGHT)
+      (/ (+ ELEVATOR-CENTER-2-X ELEVATOR-DOOR-HALF-WIDTH)
+         IMAGE-WIDTH)
+      (/ (+ ELEVATOR-CENTER-2-Y ELEVATOR-HALF-SIZE)
+         IMAGE-HEIGHT))
   ))
+
 
 ;; ============================================================
 ;; SPECTATOR / "YOU ARE HERE" POINT
+;;
+;; Position stays relative to the elevators.
+;; Corrected size:
+;; Original radius = 12 px
+;; 8x smaller    = 1.5 px
+;; 2x bigger     = 3 px
 ;; ============================================================
 
 (define SPECTATOR-X
-  (/ 325.0 IMAGE-WIDTH))  ; Centered on right elevator
+  (/ 315.0 IMAGE-WIDTH))
 
 (define SPECTATOR-Y
-  (/ (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT) IMAGE-HEIGHT)) ; Positioned at elevator entrance threshold
+  (/ 495.0 IMAGE-HEIGHT))
 
-(define SPECTATOR-RADIUS 12) ; Prominent circular marker
+(define SPECTATOR-RADIUS 3)
 
 ;; ============================================================
 ;; COLOR HELPERS
@@ -186,78 +288,260 @@
 ;; DRAWING
 ;; ============================================================
 
+;; ------------------------------------------------------------
+;; Draw one straight line
+;; ------------------------------------------------------------
+
 (define (draw-straight-line drawable x1 y1 x2 y2 width)
-  (let* ((stroke (vector x1 y1 x2 y2)))
+
+  (let* (
+      (stroke
+        (vector
+          x1 y1
+          x2 y2)))
+
     (gimp-context-set-brush-size width)
-    (gimp-paintbrush-default drawable stroke)))
+
+    (gimp-paintbrush-default
+      drawable
+      stroke)))
+
+;; ------------------------------------------------------------
+;; Draw segment list
+;; ------------------------------------------------------------
 
 (define (draw-segment-list drawable segments width)
+
   (if (null? segments)
+
       #t
-      (let* ((s  (car segments))
-             (x1 (list-ref s 0))
-             (y1 (list-ref s 1))
-             (x2 (list-ref s 2))
-             (y2 (list-ref s 3)))
-        (draw-straight-line drawable (px x1) (py y1) (px x2) (py y2) width)
-        (draw-segment-list drawable (cdr segments) width))))
+
+      (let* (
+          (s  (car segments))
+
+          (x1 (list-ref s 0))
+          (y1 (list-ref s 1))
+          (x2 (list-ref s 2))
+          (y2 (list-ref s 3)))
+
+        (draw-straight-line
+          drawable
+          (px x1)
+          (py y1)
+          (px x2)
+          (py y2)
+          width)
+
+        (draw-segment-list
+          drawable
+          (cdr segments)
+          width))))
 
 ;; ============================================================
-;; DRAW FUNCTIONS
+;; DRAW WAREHOUSE
 ;; ============================================================
 
 (define (draw-warehouse drawable color width)
+
   (gimp-context-set-foreground
-    (list (line-color-r color) (line-color-g color) (line-color-b color)))
-  (draw-segment-list drawable WAREHOUSE-SEGMENTS width))
+    (list
+      (line-color-r color)
+      (line-color-g color)
+      (line-color-b color)))
+
+  (draw-segment-list
+    drawable
+    WAREHOUSE-SEGMENTS
+    width))
+
+;; ============================================================
+;; DRAW ELEVATORS
+;; ============================================================
 
 (define (draw-elevators drawable color width)
+
+  ;; Elevator boxes
   (gimp-context-set-foreground
-    (list (line-color-r color) (line-color-g color) (line-color-b color)))
-  (draw-segment-list drawable ELEVATOR-SEGMENTS width)
-  (draw-segment-list drawable ELEVATOR-DOOR-SEGMENTS width))
+    (list
+      (line-color-r color)
+      (line-color-g color)
+      (line-color-b color)))
+
+  (draw-segment-list
+    drawable
+    ELEVATOR-SEGMENTS
+    width)
+
+  ;; Elevator doors
+  (draw-segment-list
+    drawable
+    ELEVATOR-DOOR-SEGMENTS
+    width))
+
+;; ------------------------------------------------------------
+;; Draw building outline
+;; ------------------------------------------------------------
 
 (define (draw-building-outline drawable black-color)
+
   (gimp-context-set-foreground
-    (list (line-color-r black-color) (line-color-g black-color) (line-color-b black-color)))
-  (draw-segment-list drawable BUILDING-OUTLINE (line-width-pixels)))
+    (list
+      (line-color-r black-color)
+      (line-color-g black-color)
+      (line-color-b black-color)))
+
+  (draw-segment-list
+    drawable
+    BUILDING-OUTLINE
+    (line-width-pixels)))
+
+;; ============================================================
+;; DRAW SPECTATOR POINT
+;; ============================================================
 
 (define (draw-spectator-point drawable)
-  (gimp-context-set-foreground (list BLUE-R BLUE-G BLUE-B))
-  (let ((image (gimp-item-get-image drawable)))
-    (gimp-image-select-ellipse
-      image
-      CHANNEL-OP-REPLACE
-      (- (px SPECTATOR-X) SPECTATOR-RADIUS)
-      (- (py SPECTATOR-Y) SPECTATOR-RADIUS)
-      (* 2 SPECTATOR-RADIUS)
-      (* 2 SPECTATOR-RADIUS))
-    (gimp-drawable-edit-fill drawable FILL-FOREGROUND)
-    (gimp-selection-none image)))
+
+  (gimp-context-set-foreground
+    (list
+      BLUE-R
+      BLUE-G
+      BLUE-B))
+
+  ;; Get the image directly from the drawable.
+  (let ((image
+          (gimp-item-get-image drawable)))
+
+(gimp-image-select-ellipse
+  image
+  CHANNEL-OP-REPLACE
+  (- (px SPECTATOR-X) SPECTATOR-RADIUS)
+  (- (py SPECTATOR-Y) SPECTATOR-RADIUS)
+  (* 2 SPECTATOR-RADIUS)
+  (* 2 SPECTATOR-RADIUS))
+
+(gimp-drawable-edit-fill
+  drawable
+  FILL-FOREGROUND)
+
+    (gimp-selection-none
+      image)))
 
 ;; ============================================================
 ;; MAIN
 ;; ============================================================
 
 (define (script-fu-draw-building-outline)
-  (script-fu-use-v3)
-  (let* ((image (gimp-image-new IMAGE-WIDTH IMAGE-HEIGHT RGB))
-         (layer (gimp-layer-new image "Building Outline" IMAGE-WIDTH IMAGE-HEIGHT RGBA-IMAGE 100 LAYER-MODE-NORMAL))
-         (green-line (make-line-color GREEN-R GREEN-G GREEN-B))
-         (black-line (make-line-color BLACK-R BLACK-G BLACK-B))
-         (line-width (line-width-pixels)))
 
-    (gimp-image-insert-layer image layer 0 0)
-    (gimp-drawable-fill layer FILL-WHITE)
+  (script-fu-use-v3)
+
+  (let* (
+
+      ;; ------------------------------------------------------
+      ;; Create image
+      ;; ------------------------------------------------------
+
+      (image
+        (gimp-image-new
+          IMAGE-WIDTH
+          IMAGE-HEIGHT
+          RGB))
+
+      ;; ------------------------------------------------------
+      ;; Create drawing layer
+      ;; ------------------------------------------------------
+
+      (layer
+        (gimp-layer-new
+          image
+          "Building Outline"
+          IMAGE-WIDTH
+          IMAGE-HEIGHT
+          RGBA-IMAGE
+          100
+          LAYER-MODE-NORMAL))
+
+      ;; ------------------------------------------------------
+      ;; Colors
+      ;; ------------------------------------------------------
+
+      (green-line
+        (make-line-color
+          GREEN-R
+          GREEN-G
+          GREEN-B))
+
+      (black-line
+        (make-line-color
+          BLACK-R
+          BLACK-G
+          BLACK-B))
+
+      ;; ------------------------------------------------------
+      ;; Line width
+      ;; ------------------------------------------------------
+
+      (line-width
+        (line-width-pixels))
+    )
+
+    ;; --------------------------------------------------------
+    ;; Insert layer
+    ;; --------------------------------------------------------
+
+    (gimp-image-insert-layer
+      image
+      layer
+      0
+      0)
+
+    ;; White background
+    (gimp-drawable-fill
+      layer
+      FILL-WHITE)
+
+    ;; Default settings
     (gimp-context-set-defaults)
     (gimp-context-set-default-colors)
 
-    (draw-building-outline layer black-line)
-    (draw-warehouse layer green-line line-width)
-    (draw-elevators layer black-line line-width)
-    (draw-spectator-point layer)
+    ;; --------------------------------------------------------
+    ;; BUILDING
+    ;; --------------------------------------------------------
 
-    (gimp-display-new image)))
+    (draw-building-outline
+      layer
+      black-line)
+
+    ;; --------------------------------------------------------
+    ;; WAREHOUSE
+    ;; --------------------------------------------------------
+
+    (draw-warehouse
+      layer
+      green-line
+      line-width)
+
+    ;; --------------------------------------------------------
+    ;; TWO ELEVATORS
+    ;; --------------------------------------------------------
+
+    (draw-elevators
+      layer
+      black-line
+      line-width)
+
+    ;; --------------------------------------------------------
+    ;; SPECTATOR POINT
+    ;; --------------------------------------------------------
+
+    (draw-spectator-point
+      layer)
+
+    ;; --------------------------------------------------------
+    ;; Display
+    ;; --------------------------------------------------------
+
+    (gimp-display-new image)
+  ))
 
 ;; ============================================================
 ;; RUN
