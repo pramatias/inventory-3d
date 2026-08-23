@@ -44,6 +44,11 @@
 (define BLUE-G 70)
 (define BLUE-B 180)
 
+;; Shelf default color
+(define PURPLE-R 128)
+(define PURPLE-G 0)
+(define PURPLE-B 128)
+
 
 ;; ============================================================
 ;; BASE SIZES
@@ -165,13 +170,50 @@
 ;; ============================================================
 
 ;; Elevator center positions in reference coordinates.
-(define ELEVATOR-CENTER-1-X 270.0)
-(define ELEVATOR-CENTER-2-X 310.0)
-(define ELEVATOR-CENTER-Y   450.0)
+(define ELEVATOR-CENTER-1-X 280.0)
+(define ELEVATOR-CENTER-2-X 300.0)
+(define ELEVATOR-CENTER-Y   435.0)
 
 ;; Elevator half dimensions in reference coordinates.
-(define ELEVATOR-HALF-WIDTH  15.0)
-(define ELEVATOR-HALF-HEIGHT 25.0)
+(define ELEVATOR-HALF-WIDTH  7.0)
+(define ELEVATOR-HALF-HEIGHT 12.5)
+
+
+;; ============================================================
+;; SHELF DATATYPES
+;; ============================================================
+
+;; SHELF:
+;;   (x1 y1 x2 y2 side-count color segments)
+;;
+;; side-count = 1 for one-sided, 2 for two-sided.
+;;
+;; SHELF-SEGMENT:
+;;   (start-offset length depth color)
+;;
+;; start-offset and length are measured along the shelf line.
+;; For the vertical shelf below, offset 0 starts at the top.
+;; A segment is drawn on the right side; for a two-sided shelf,
+;; the same segment is mirrored to the left side.
+
+(define (make-shelf x1 y1 x2 y2 side-count color segments)
+  (list x1 y1 x2 y2 side-count color segments))
+
+(define (shelf-x1 s)        (list-ref s 0))
+(define (shelf-y1 s)        (list-ref s 1))
+(define (shelf-x2 s)        (list-ref s 2))
+(define (shelf-y2 s)        (list-ref s 3))
+(define (shelf-side-count s) (list-ref s 4))
+(define (shelf-color s)     (list-ref s 5))
+(define (shelf-segments s)  (list-ref s 6))
+
+(define (make-shelf-segment start-offset length depth color)
+  (list start-offset length depth color))
+
+(define (shelf-segment-start s)  (list-ref s 0))
+(define (shelf-segment-length s) (list-ref s 1))
+(define (shelf-segment-depth s)  (list-ref s 2))
+(define (shelf-segment-color s)  (list-ref s 3))
 
 
 ;; ------------------------------------------------------------
@@ -249,19 +291,6 @@
 
 
 ;; ============================================================
-;; SPECTATOR / "YOU ARE HERE" POINT
-;; ============================================================
-
-;; Centered on the right elevator.
-(define SPECTATOR-X
-  ELEVATOR-CENTER-2-X)
-
-;; Positioned at the bottom of the right elevator.
-(define SPECTATOR-Y
-  (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT))
-
-
-;; ============================================================
 ;; COLOR HELPERS
 ;; ============================================================
 
@@ -276,6 +305,56 @@
 
 (define (line-color-b c)
   (list-ref c 2))
+
+
+;; ============================================================
+;; DEFAULT SHELF
+;; ============================================================
+
+;; One-sided shelf placed immediately to the right of the right
+;; elevator. Its line length exactly matches the elevator height:
+;; 2 * ELEVATOR-HALF-HEIGHT = 25.0 reference units.
+(define SHELF-GAP 12.0)
+(define SHELF-SEGMENT-DEPTH 16.0)
+(define SHELF-LENGTH
+  (* 2.0 ELEVATOR-HALF-HEIGHT))
+
+(define DEFAULT-SHELF
+  (make-shelf
+    (+ ELEVATOR-CENTER-2-X
+       ELEVATOR-HALF-WIDTH
+       SHELF-GAP)
+    (- ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT)
+    (+ ELEVATOR-CENTER-2-X
+       ELEVATOR-HALF-WIDTH
+       SHELF-GAP)
+    (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT)
+    1
+    (make-line-color PURPLE-R PURPLE-G PURPLE-B)
+    (list
+      (make-shelf-segment
+        0.0
+        (/ SHELF-LENGTH 2.0)
+        SHELF-SEGMENT-DEPTH
+        (make-line-color PURPLE-R PURPLE-G PURPLE-B))
+      (make-shelf-segment
+        (/ SHELF-LENGTH 2.0)
+        (/ SHELF-LENGTH 2.0)
+        SHELF-SEGMENT-DEPTH
+        (make-line-color PURPLE-R PURPLE-G PURPLE-B)))))
+
+
+;; ============================================================
+;; SPECTATOR / "YOU ARE HERE" POINT
+;; ============================================================
+
+;; Centered on the right elevator.
+(define SPECTATOR-X
+  ELEVATOR-CENTER-2-X)
+
+;; Positioned at the bottom of the right elevator.
+(define SPECTATOR-Y
+  (+ ELEVATOR-CENTER-Y ELEVATOR-HALF-HEIGHT))
 
 
 ;; ============================================================
@@ -383,6 +462,138 @@
     drawable
     ELEVATOR-SEGMENTS
     width))
+
+
+;; ============================================================
+;; DRAW SHELVES
+;; ============================================================
+
+(define (draw-shelf-segment-rectangle drawable image shelf segment side)
+  (let*
+    ((x1 (shelf-x1 shelf))
+     (y1 (shelf-y1 shelf))
+     (x2 (shelf-x2 shelf))
+     (y2 (shelf-y2 shelf))
+     (start (shelf-segment-start segment))
+     (length (shelf-segment-length segment))
+     (depth (shelf-segment-depth segment))
+     (color (shelf-segment-color segment)))
+
+    (gimp-context-set-foreground
+      (list
+        (line-color-r color)
+        (line-color-g color)
+        (line-color-b color)))
+
+    ;; The current default shelf is vertical. For a vertical shelf,
+    ;; the right side is +X and the left side is -X.
+    (if (= x1 x2)
+        (let*
+          ((top-y (+ y1 start))
+           (rect-y (py top-y))
+           (rect-height (psize length))
+           (center-x (px x1))
+           (rect-width (psize depth))
+           (rect-x
+             (if (= side 1)
+                 center-x
+                 (- center-x rect-width))))
+
+          (gimp-image-select-rectangle
+            image
+            CHANNEL-OP-REPLACE
+            rect-x
+            rect-y
+            rect-width
+            rect-height)
+
+          (gimp-drawable-edit-fill
+            drawable
+            FILL-FOREGROUND)
+
+          (gimp-selection-none image))
+
+        ;; Horizontal shelf support, included so the datatype remains
+        ;; reusable for shelves in either orientation.
+        (let*
+          ((left-x (+ x1 start))
+           (rect-x (px left-x))
+           (rect-width (psize length))
+           (center-y (py y1))
+           (rect-height (psize depth))
+           (rect-y
+             (if (= side 1)
+                 (- center-y rect-height)
+                 center-y)))
+
+          (gimp-image-select-rectangle
+            image
+            CHANNEL-OP-REPLACE
+            rect-x
+            rect-y
+            rect-width
+            rect-height)
+
+          (gimp-drawable-edit-fill
+            drawable
+            FILL-FOREGROUND)
+
+          (gimp-selection-none image)))))
+
+
+(define (draw-shelf-segments drawable image shelf segments)
+  (if (null? segments)
+      #t
+      (let*
+        ((segment (car segments)))
+
+        ;; Every shelf segment is drawn on the right side.
+        (draw-shelf-segment-rectangle
+          drawable image shelf segment 1)
+
+        ;; A two-sided shelf gets the mirrored rectangle as well.
+        (if (= (shelf-side-count shelf) 2)
+            (draw-shelf-segment-rectangle
+              drawable image shelf segment 2)
+            #t)
+
+        (draw-shelf-segments
+          drawable
+          image
+          shelf
+          (cdr segments)))))
+
+
+(define (draw-shelf drawable image shelf width)
+  (let*
+    ((color (shelf-color shelf))
+     (segments (shelf-segments shelf))
+     (x1 (shelf-x1 shelf))
+     (y1 (shelf-y1 shelf))
+     (x2 (shelf-x2 shelf))
+     (y2 (shelf-y2 shelf)))
+
+    ;; Shelf line.
+    (gimp-context-set-foreground
+      (list
+        (line-color-r color)
+        (line-color-g color)
+        (line-color-b color)))
+
+    (draw-straight-line
+      drawable
+      (px x1)
+      (py y1)
+      (px x2)
+      (py y2)
+      width)
+
+    ;; Shelf segment rectangles.
+    (draw-shelf-segments
+      drawable
+      image
+      shelf
+      segments)))
 
 
 ;; ============================================================
@@ -508,6 +719,14 @@
     (draw-elevators
       layer
       black-line
+      line-width)
+
+    ;; Default purple one-sided shelf, immediately right of the
+    ;; right elevator, with two rectangles on its right side.
+    (draw-shelf
+      layer
+      image
+      DEFAULT-SHELF
       line-width)
 
     ;; Blue spectator marker.
