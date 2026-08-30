@@ -1,26 +1,23 @@
-#!/usr/bin/env gimp-script-fu-interpreter-3.0
 ;!#
 
 ;; ============================================================
-;; GIMP SCRIPT-FU — PALLET DRAWING
+;; GIMP SCRIPT-FU β€” PALLET DRAWING
 ;;
-;; Pallet reference size:
-;;   1.20 m x 0.80 m
-;;   405 px x 270 px
+;; Rotated pallet reference size:
+;;   0.80 m x 1.20 m
+;;   270 px x 405 px
 ;;
-;; FIVE HORIZONTAL PLANKS
+;; EXISTING FIVE PLANKS (ROTATED 90 DEGREES)
+;;   Original horizontal planks are now vertical.
 ;;
-;; Plank dimensions:
-;;   1st = 14 cm = 47 px
-;;   2nd =  9 cm = 30 px
-;;   3rd = 14 cm = 47 px
-;;   4th =  9 cm = 30 px
-;;   5th = 14 cm = 47 px
+;; THREE NEW PERPENDICULAR PLANKS
+;;   Full pallet width, placed at the top, middle, and bottom.
+;;   Each plank is 14 cm thick = 47 px.
 ;;
-;; The spaces between the planks are WHITE and transparent
+;; The spaces between the original planks are WHITE and transparent
 ;; to the wood, matching the white background.
 ;;
-;; No floating-point numbers are used.
+;; No floating-point coordinate values are used.
 ;; ============================================================
 
 
@@ -34,40 +31,53 @@
 (define BASE-WIDTH 1080)
 (define BASE-HEIGHT 1080)
 
-;; Pallet size
-(define PALLET-WIDTH 405)
-(define PALLET-HEIGHT 270)
+;; Pallet size after 90-degree rotation
+(define PALLET-WIDTH 270)
+(define PALLET-HEIGHT 405)
 
-;; Plank heights
-;; 14 cm ≈ 47 px
-;;  9 cm ≈ 30 px
-(define PLANK-1-HEIGHT 47)
-(define PLANK-2-HEIGHT 30)
-(define PLANK-3-HEIGHT 47)
-(define PLANK-4-HEIGHT 30)
-(define PLANK-5-HEIGHT 47)
+;; Original plank dimensions, rotated:
+;; original 14 cm x 9 cm planks become 47 px x 30 px in plan.
+(define PLANK-1-WIDTH 47)
+(define PLANK-2-WIDTH 30)
+(define PLANK-3-WIDTH 47)
+(define PLANK-4-WIDTH 30)
+(define PLANK-5-WIDTH 47)
 
-;; Total plank height = 201 px
-;; Pallet height = 270 px
-;; Remaining white space = 69 px
+;; Three new perpendicular planks
+;; EXACT DIMENSION: 14 cm = 47 px thickness.
+;; This is the dimension perpendicular to the plank's long direction.
+(define CROSS-PLANK-THICKNESS-14CM 47)
+
+;; Total original-plank width = 201 px.
+;; Remaining white space across pallet width = 69 px.
 ;;
-;; We use four equal-ish gaps:
+;; Four equal-ish gaps:
 ;;   GAP-1 = 17 px
 ;;   GAP-2 = 17 px
 ;;   GAP-3 = 17 px
 ;;   GAP-4 = 18 px
 ;;
-;; This gives:
-;;   47 + 17 + 30 + 17 + 47 + 17 + 30 + 18 + 47
-;;   = 270 px
+;; 47 + 17 + 30 + 17 + 47 + 17 + 30 + 18 + 47 = 270 px
 
 (define GAP-1 17)
 (define GAP-2 17)
 (define GAP-3 17)
 (define GAP-4 18)
 
+;; Three cross-planks:
+;; Each is EXACTLY 47 px thick (14 cm).
+;;   top    = 0..47
+;;   middle = 179..226
+;;   bottom = 358..405
+(define CROSS-TOP-Y 0)
+(define CROSS-MIDDLE-Y 179)
+(define CROSS-BOTTOM-Y 358)
 
-;; Center pallet in image.
+
+;; ============================================================
+;; CENTER PALLET IN IMAGE
+;; ============================================================
+
 (define PALLET-X
   (/ (- BASE-WIDTH PALLET-WIDTH) 2))
 
@@ -200,8 +210,8 @@
 ;; ============================================================
 ;; DRAW PALLET BASE
 ;;
-;; This creates the full white background first.
-;; The wood is then drawn only where the planks exist.
+;; Full pallet area starts white. Wood is only drawn where planks
+;; exist, leaving the original gaps white.
 ;; ============================================================
 
 (define (draw-pallet-base drawable image)
@@ -217,132 +227,154 @@
 
 
 ;; ============================================================
-;; DRAW FIVE SEPARATE HORIZONTAL PLANKS
-;;
-;; IMPORTANT:
-;; The white gaps between planks remain untouched.
+;; DRAW FIVE ORIGINAL PLANKS β€” NOW VERTICAL
 ;; ============================================================
 
-(define (draw-horizontal-planks drawable image)
+(define (draw-vertical-planks drawable image)
 
   (let*
-    ;; Starting Y coordinate
-    ((y1
-      PALLET-Y)
+    ((x1 PALLET-X)
 
      ;; Plank 1
-     (y2
-      (+ y1 PLANK-1-HEIGHT))
+     (x2
+      (+ x1 PLANK-1-WIDTH))
 
      ;; White gap 1
-     (y3
-      (+ y2 GAP-1))
+     (x3
+      (+ x2 GAP-1))
 
      ;; Plank 2
-     (y4
-      (+ y3 PLANK-2-HEIGHT))
+     (x4
+      (+ x3 PLANK-2-WIDTH))
 
      ;; White gap 2
-     (y5
-      (+ y4 GAP-2))
+     (x5
+      (+ x4 GAP-2))
 
      ;; Plank 3
-     (y6
-      (+ y5 PLANK-3-HEIGHT))
+     (x6
+      (+ x5 PLANK-3-WIDTH))
 
      ;; White gap 3
-     (y7
-      (+ y6 GAP-3))
+     (x7
+      (+ x6 GAP-3))
 
      ;; Plank 4
-     (y8
-      (+ y7 PLANK-4-HEIGHT))
+     (x8
+      (+ x7 PLANK-4-WIDTH))
 
      ;; White gap 4
-     (y9
-      (+ y8 GAP-4))
+     (x9
+      (+ x8 GAP-4))
 
      ;; Plank 5
-     (y10
-      (+ y9 PLANK-5-HEIGHT))
+     (x10
+      (+ x9 PLANK-5-WIDTH))
 
      (wood
       (make-color WOOD-R WOOD-G WOOD-B)))
 
-    ;; --------------------------------------------------------
-    ;; PLANK 1 — 14 cm / 47 px
-    ;; --------------------------------------------------------
-
+    ;; Plank 1 β€” 47 px wide
     (draw-rectangle-filled
       drawable
       image
-      PALLET-X
-      y1
-      PALLET-WIDTH
-      PLANK-1-HEIGHT
+      x1
+      PALLET-Y
+      PLANK-1-WIDTH
+      PALLET-HEIGHT
       wood)
 
-    ;; --------------------------------------------------------
-    ;; PLANK 2 — 9 cm / 30 px
-    ;; --------------------------------------------------------
-
+    ;; Plank 2 β€” 30 px wide
     (draw-rectangle-filled
       drawable
       image
-      PALLET-X
-      y3
-      PALLET-WIDTH
-      PLANK-2-HEIGHT
+      x3
+      PALLET-Y
+      PLANK-2-WIDTH
+      PALLET-HEIGHT
       wood)
 
-    ;; --------------------------------------------------------
-    ;; PLANK 3 — 14 cm / 47 px
-    ;; --------------------------------------------------------
-
+    ;; Plank 3 β€” 47 px wide
     (draw-rectangle-filled
       drawable
       image
-      PALLET-X
-      y5
-      PALLET-WIDTH
-      PLANK-3-HEIGHT
+      x5
+      PALLET-Y
+      PLANK-3-WIDTH
+      PALLET-HEIGHT
       wood)
 
-    ;; --------------------------------------------------------
-    ;; PLANK 4 — 9 cm / 30 px
-    ;; --------------------------------------------------------
-
+    ;; Plank 4 β€” 30 px wide
     (draw-rectangle-filled
       drawable
       image
-      PALLET-X
-      y7
-      PALLET-WIDTH
-      PLANK-4-HEIGHT
+      x7
+      PALLET-Y
+      PLANK-4-WIDTH
+      PALLET-HEIGHT
       wood)
 
-    ;; --------------------------------------------------------
-    ;; PLANK 5 — 14 cm / 47 px
-    ;; --------------------------------------------------------
-
+    ;; Plank 5 β€” 47 px wide
     (draw-rectangle-filled
       drawable
       image
-      PALLET-X
-      y9
-      PALLET-WIDTH
-      PLANK-5-HEIGHT
+      x9
+      PALLET-Y
+      PLANK-5-WIDTH
+      PALLET-HEIGHT
       wood)))
 
 
 ;; ============================================================
-;; DRAW EACH PLANK OUTLINE
+;; DRAW THREE NEW PERPENDICULAR PLANKS
 ;;
-;; Each plank gets its own outline.
-;; The white spaces remain completely white.
+;; These run across the full pallet width.
+;; They are drawn after the vertical planks so they visibly sit
+;; across them. Their thickness is exactly 14 cm (47 px).
 ;; ============================================================
 
-(define (draw-horizontal-plank-outlines drawable)
+(define (draw-cross-planks drawable image)
+
+  (let
+    ((wood
+      (make-color WOOD-R WOOD-G WOOD-B)))
+
+    ;; Top cross-plank
+    (draw-rectangle-filled
+      drawable
+      image
+      PALLET-X
+      (+ PALLET-Y CROSS-TOP-Y)
+      PALLET-WIDTH
+      CROSS-PLANK-THICKNESS-14CM
+      wood)
+
+    ;; Middle cross-plank
+    (draw-rectangle-filled
+      drawable
+      image
+      PALLET-X
+      (+ PALLET-Y CROSS-MIDDLE-Y)
+      PALLET-WIDTH
+      CROSS-PLANK-THICKNESS-14CM
+      wood)
+
+    ;; Bottom cross-plank
+    (draw-rectangle-filled
+      drawable
+      image
+      PALLET-X
+      (+ PALLET-Y CROSS-BOTTOM-Y)
+      PALLET-WIDTH
+      CROSS-PLANK-THICKNESS-14CM
+      wood)))
+
+
+;; ============================================================
+;; DRAW OUTLINES FOR THE FIVE VERTICAL PLANKS
+;; ============================================================
+
+(define (draw-vertical-plank-outlines drawable)
 
   (let*
     ((c
@@ -351,173 +383,208 @@
         WOOD-LINE-G
         WOOD-LINE-B))
 
-     (y1
-      PALLET-Y)
+     (x1 PALLET-X)
 
-     (y2
-      (+ y1 PLANK-1-HEIGHT))
+     (x2
+      (+ x1 PLANK-1-WIDTH))
 
-     (y3
-      (+ y2 GAP-1))
+     (x3
+      (+ x2 GAP-1))
 
-     (y4
-      (+ y3 PLANK-2-HEIGHT))
+     (x4
+      (+ x3 PLANK-2-WIDTH))
 
-     (y5
-      (+ y4 GAP-2))
+     (x5
+      (+ x4 GAP-2))
 
-     (y6
-      (+ y5 PLANK-3-HEIGHT))
+     (x6
+      (+ x5 PLANK-3-WIDTH))
 
-     (y7
-      (+ y6 GAP-3))
+     (x7
+      (+ x6 GAP-3))
 
-     (y8
-      (+ y7 PLANK-4-HEIGHT))
+     (x8
+      (+ x7 PLANK-4-WIDTH))
 
-     (y9
-      (+ y8 GAP-4))
+     (x9
+      (+ x8 GAP-4))
 
-     (y10
-      (+ y9 PLANK-5-HEIGHT)))
+     (x10
+      (+ x9 PLANK-5-WIDTH)))
 
-
-    ;; ========================================================
-    ;; PLANK 1 OUTLINE
-    ;; ========================================================
-
-    ;; Top
+    ;; Vertical boundary lines for each of the 5 original planks
     (draw-straight-line
       drawable
-      PALLET-X y1
-      (+ PALLET-X PALLET-WIDTH) y1
+      x1 PALLET-Y
+      x1 (+ PALLET-Y PALLET-HEIGHT)
       BASE-LINE-WIDTH c)
 
-    ;; Bottom
     (draw-straight-line
       drawable
-      PALLET-X y2
-      (+ PALLET-X PALLET-WIDTH) y2
+      x2 PALLET-Y
+      x2 (+ PALLET-Y PALLET-HEIGHT)
       BASE-LINE-WIDTH c)
 
-
-    ;; ========================================================
-    ;; PLANK 2 OUTLINE
-    ;; ========================================================
-
-    ;; Top
     (draw-straight-line
       drawable
-      PALLET-X y3
-      (+ PALLET-X PALLET-WIDTH) y3
+      x3 PALLET-Y
+      x3 (+ PALLET-Y PALLET-HEIGHT)
       BASE-LINE-WIDTH c)
 
-    ;; Bottom
     (draw-straight-line
       drawable
-      PALLET-X y4
-      (+ PALLET-X PALLET-WIDTH) y4
+      x4 PALLET-Y
+      x4 (+ PALLET-Y PALLET-HEIGHT)
       BASE-LINE-WIDTH c)
 
-
-    ;; ========================================================
-    ;; PLANK 3 OUTLINE
-    ;; ========================================================
-
-    ;; Top
     (draw-straight-line
       drawable
-      PALLET-X y5
-      (+ PALLET-X PALLET-WIDTH) y5
+      x5 PALLET-Y
+      x5 (+ PALLET-Y PALLET-HEIGHT)
       BASE-LINE-WIDTH c)
 
-    ;; Bottom
     (draw-straight-line
       drawable
-      PALLET-X y6
-      (+ PALLET-X PALLET-WIDTH) y6
+      x6 PALLET-Y
+      x6 (+ PALLET-Y PALLET-HEIGHT)
       BASE-LINE-WIDTH c)
 
-
-    ;; ========================================================
-    ;; PLANK 4 OUTLINE
-    ;; ========================================================
-
-    ;; Top
     (draw-straight-line
       drawable
-      PALLET-X y7
-      (+ PALLET-X PALLET-WIDTH) y7
+      x7 PALLET-Y
+      x7 (+ PALLET-Y PALLET-HEIGHT)
       BASE-LINE-WIDTH c)
 
-    ;; Bottom
     (draw-straight-line
       drawable
-      PALLET-X y8
-      (+ PALLET-X PALLET-WIDTH) y8
+      x8 PALLET-Y
+      x8 (+ PALLET-Y PALLET-HEIGHT)
       BASE-LINE-WIDTH c)
 
-
-    ;; ========================================================
-    ;; PLANK 5 OUTLINE
-    ;; ========================================================
-
-    ;; Top
     (draw-straight-line
       drawable
-      PALLET-X y9
-      (+ PALLET-X PALLET-WIDTH) y9
+      x9 PALLET-Y
+      x9 (+ PALLET-Y PALLET-HEIGHT)
       BASE-LINE-WIDTH c)
 
-    ;; Bottom
     (draw-straight-line
       drawable
-      PALLET-X y10
-      (+ PALLET-X PALLET-WIDTH) y10
+      x10 PALLET-Y
+      x10 (+ PALLET-Y PALLET-HEIGHT)
       BASE-LINE-WIDTH c)))
 
 
 ;; ============================================================
-;; DRAW PALLET SIDE BOUNDARIES
-;;
-;; Only the outer left and right edges are drawn.
+;; DRAW OUTLINES FOR THE THREE NEW CROSS-PLANKS
 ;; ============================================================
 
-(define (draw-pallet-side-outline drawable)
+(define (draw-cross-plank-outlines drawable)
 
-  (let*
+  (let
     ((c
       (make-color
         WOOD-LINE-R
         WOOD-LINE-G
-        WOOD-LINE-B))
+        WOOD-LINE-B)))
 
-     (top
-      PALLET-Y)
+    ;; Top cross-plank
+    (draw-straight-line
+      drawable
+      PALLET-X
+      (+ PALLET-Y CROSS-TOP-Y)
+      (+ PALLET-X PALLET-WIDTH)
+      (+ PALLET-Y CROSS-TOP-Y)
+      BASE-LINE-WIDTH
+      c)
 
-     (bottom
-      (+ PALLET-Y PALLET-HEIGHT)))
+    (draw-straight-line
+      drawable
+      PALLET-X
+      (+ PALLET-Y CROSS-TOP-Y CROSS-PLANK-THICKNESS-14CM)
+      (+ PALLET-X PALLET-WIDTH)
+      (+ PALLET-Y CROSS-TOP-Y CROSS-PLANK-THICKNESS-14CM)
+      BASE-LINE-WIDTH
+      c)
 
+    ;; Middle cross-plank
+    (draw-straight-line
+      drawable
+      PALLET-X
+      (+ PALLET-Y CROSS-MIDDLE-Y)
+      (+ PALLET-X PALLET-WIDTH)
+      (+ PALLET-Y CROSS-MIDDLE-Y)
+      BASE-LINE-WIDTH
+      c)
+
+    (draw-straight-line
+      drawable
+      PALLET-X
+      (+ PALLET-Y CROSS-MIDDLE-Y CROSS-PLANK-THICKNESS-14CM)
+      (+ PALLET-X PALLET-WIDTH)
+      (+ PALLET-Y CROSS-MIDDLE-Y CROSS-PLANK-THICKNESS-14CM)
+      BASE-LINE-WIDTH
+      c)
+
+    ;; Bottom cross-plank
+    (draw-straight-line
+      drawable
+      PALLET-X
+      (+ PALLET-Y CROSS-BOTTOM-Y)
+      (+ PALLET-X PALLET-WIDTH)
+      (+ PALLET-Y CROSS-BOTTOM-Y)
+      BASE-LINE-WIDTH
+      c)
+
+    (draw-straight-line
+      drawable
+      PALLET-X
+      (+ PALLET-Y CROSS-BOTTOM-Y CROSS-PLANK-THICKNESS-14CM)
+      (+ PALLET-X PALLET-WIDTH)
+      (+ PALLET-Y CROSS-BOTTOM-Y CROSS-PLANK-THICKNESS-14CM)
+      BASE-LINE-WIDTH
+      c)))
+
+
+;; ============================================================
+;; DRAW PALLET OUTER BOUNDARY
+;; ============================================================
+
+(define (draw-pallet-outer-outline drawable)
+
+  (let
+    ((c
+      (make-color
+        WOOD-LINE-R
+        WOOD-LINE-G
+        WOOD-LINE-B)))
+
+    ;; Top edge
+    (draw-straight-line
+      drawable
+      PALLET-X PALLET-Y
+      (+ PALLET-X PALLET-WIDTH) PALLET-Y
+      BASE-LINE-WIDTH c)
+
+    ;; Bottom edge
+    (draw-straight-line
+      drawable
+      PALLET-X (+ PALLET-Y PALLET-HEIGHT)
+      (+ PALLET-X PALLET-WIDTH) (+ PALLET-Y PALLET-HEIGHT)
+      BASE-LINE-WIDTH c)
 
     ;; Left edge
     (draw-straight-line
       drawable
-      PALLET-X
-      top
-      PALLET-X
-      bottom
-      BASE-LINE-WIDTH
-      c)
+      PALLET-X PALLET-Y
+      PALLET-X (+ PALLET-Y PALLET-HEIGHT)
+      BASE-LINE-WIDTH c)
 
     ;; Right edge
     (draw-straight-line
       drawable
-      (+ PALLET-X PALLET-WIDTH)
-      top
-      (+ PALLET-X PALLET-WIDTH)
-      bottom
-      BASE-LINE-WIDTH
-      c)))
+      (+ PALLET-X PALLET-WIDTH) PALLET-Y
+      (+ PALLET-X PALLET-WIDTH) (+ PALLET-Y PALLET-HEIGHT)
+      BASE-LINE-WIDTH c)))
 
 
 ;; ============================================================
@@ -566,17 +633,27 @@
       layer
       image)
 
-    ;; Five separate wooden planks
-    (draw-horizontal-planks
+    ;; Five original planks, rotated 90 degrees
+    (draw-vertical-planks
       layer
       image)
 
-    ;; Individual plank outlines
-    (draw-horizontal-plank-outlines
+    ;; Three new perpendicular planks:
+    ;; top, middle, bottom
+    (draw-cross-planks
+      layer
+      image)
+
+    ;; Outlines for original vertical planks
+    (draw-vertical-plank-outlines
       layer)
 
-    ;; Outer left/right boundaries
-    (draw-pallet-side-outline
+    ;; Outlines for new cross-planks
+    (draw-cross-plank-outlines
+      layer)
+
+    ;; Outer pallet boundary
+    (draw-pallet-outer-outline
       layer)
 
     ;; Display finished image
