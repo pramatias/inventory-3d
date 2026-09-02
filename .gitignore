@@ -1,0 +1,13 @@
+.DS_Store
+.idea
+*.log
+tmp/
+
+# Rust build artifacts
+/rust/target/
+
+# Compiled Python extension
+/gimp-plugin/inventory-3d/*.so
+
+# Python/Rust wheels
+/rust/*.whl
