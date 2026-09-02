@@ -1,0 +1,18 @@
+[package]
+name = "inventory-3d-geometry"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "_geometry"
+crate-type = ["cdylib"]
+
+[dependencies]
+nalgebra = "0.34"
+pyo3 = { version = "0.25", features = ["abi3-py39", "extension-module"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = "symbols"
