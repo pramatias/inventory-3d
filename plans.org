@@ -1,0 +1,1520 @@
+* Useful Info
+* TinyScheme implementation
+
+#+begin_src scheme
+
+#!/usr/bin/env gimp-script-fu-interpreter-3.0
+#!/home/emporas/repos/inventory-3d/gimp-plugin/inventory-3d/inventory-3d.py
+
+;!#
+
+;; ============================================================
+;; GIMP SCRIPT-FU — RECTANGULAR WOODEN FRAME
+;;
+;; FRAME SIZE:
+;;   60 cm width
+;;   160 cm height
+;;
+;; SCALE:
+;;   6 px = 1 cm
+;;
+;; FRAME:
+;;   360 px x 960 px
+;;
+;; WOODEN BORDER:
+;;   4 cm = 24 px
+;;
+;; INNER PATTERN AREA:
+;;   52 cm x 152 cm
+;;   312 px x 912 px
+;;
+;; DIAGONAL WOOD STRIPS:
+;;   Width = 1.8 cm ≈ 11 px
+;;   Gap   = 1.8 cm ≈ 11 px
+;;   Total perpendicular pitch = 3.6 cm ≈ 21.6 px
+;;
+;; For 45 degree lines:
+;;   equation pitch ≈ 21.6 × sqrt(2) ≈ 30.55 px
+;;
+;; Integer-only value:
+;;   DIAGONAL-PITCH = 31 px
+;;
+;; PATTERN:
+;;   Left side  = +45 degrees
+;;   Right side = -45 degrees
+;;
+;; The patterns are mirrored so every +45 strip has a
+;; corresponding -45 strip on the opposite side.
+;;
+;; No floating-point numbers are used.
+;; ============================================================
+
+
+;; ============================================================
+;; CONFIGURATION
+;; ============================================================
+
+(define IMAGE-WIDTH 1080)
+(define IMAGE-HEIGHT 1080)
+
+;; ------------------------------------------------------------
+;; SCALE
+;; ------------------------------------------------------------
+
+;; 1 cm = 6 pixels
+(define PX-PER-CM 6)
+
+
+;; ============================================================
+;; FRAME DIMENSIONS
+;; ============================================================
+
+;; 60 cm x 160 cm
+(define FRAME-WIDTH 360)
+(define FRAME-HEIGHT 960)
+
+;; Wooden border = 4 cm
+(define BORDER-WIDTH 24)
+
+;; Inner pattern dimensions
+(define INNER-WIDTH
+  (- FRAME-WIDTH
+     (* 2 BORDER-WIDTH)))
+
+(define INNER-HEIGHT
+  (- FRAME-HEIGHT
+     (* 2 BORDER-WIDTH)))
+
+
+;; ============================================================
+;; PATTERN DIMENSIONS
+;; ============================================================
+
+;; Wood strip width = 1.8 cm ≈ 11 px
+(define STRIP-WIDTH 11)
+
+;; Gap = 1.8 cm ≈ 11 px
+
+;; Total pitch:
+;; 1.8 cm + 1.8 cm = 3.6 cm
+;;
+;; At 45 degrees:
+;; perpendicular spacing × sqrt(2)
+;; ≈ 21.6 × 1.414
+;; ≈ 30.55 px
+;;
+;; Integer-only approximation:
+(define DIAGONAL-PITCH 31)
+
+
+;; ============================================================
+;; CENTER FRAME
+;; ============================================================
+
+(define FRAME-X
+  (/ (- IMAGE-WIDTH FRAME-WIDTH) 2))
+
+(define FRAME-Y
+  (/ (- IMAGE-HEIGHT FRAME-HEIGHT) 2))
+
+
+;; Inner opening
+(define INNER-X
+  (+ FRAME-X BORDER-WIDTH))
+
+(define INNER-Y
+  (+ FRAME-Y BORDER-WIDTH))
+
+
+;; ============================================================
+;; COLORS
+;; ============================================================
+
+;; Light wood fill
+(define WOOD-R 196)
+(define WOOD-G 145)
+(define WOOD-B 85)
+
+;; Dark wood outline
+(define WOOD-LINE-R 96)
+(define WOOD-LINE-G 62)
+(define WOOD-LINE-B 30)
+
+;; White
+(define BG-R 255)
+(define BG-G 255)
+(define BG-B 255)
+
+
+;; ============================================================
+;; LINE WIDTH
+;; ============================================================
+
+(define BASE-LINE-WIDTH 6)
+
+
+;; ============================================================
+;; SCALE FUNCTIONS
+;; ============================================================
+
+(define (scale-x)
+  (/ IMAGE-WIDTH IMAGE-WIDTH))
+
+(define (scale-y)
+  (/ IMAGE-HEIGHT IMAGE-HEIGHT))
+
+(define (scale-uniform)
+  (min (scale-x) (scale-y)))
+
+(define (px value)
+  value)
+
+(define (psize value)
+  value)
+
+
+;; ============================================================
+;; COLOR HELPERS
+;; ============================================================
+
+(define (make-color r g b)
+  (list r g b))
+
+(define (color-r c)
+  (list-ref c 0))
+
+(define (color-g c)
+  (list-ref c 1))
+
+(define (color-b c)
+  (list-ref c 2))
+
+
+;; ============================================================
+;; SET FOREGROUND COLOR
+;; ============================================================
+
+(define (set-color color)
+
+  (gimp-context-set-foreground
+    (list
+      (color-r color)
+      (color-g color)
+      (color-b color))))
+
+
+;; ============================================================
+;; DRAW FILLED RECTANGLE
+;; ============================================================
+
+(define
+  (draw-rectangle-filled drawable image x y width height color)
+
+  (set-color color)
+
+  (gimp-image-select-rectangle
+    image
+    CHANNEL-OP-REPLACE
+    x
+    y
+    width
+    height)
+
+  (gimp-drawable-edit-fill
+    drawable
+    FILL-FOREGROUND)
+
+  (gimp-selection-none image))
+
+
+;; ============================================================
+;; DRAW STRAIGHT LINE
+;; ============================================================
+
+(define
+  (draw-straight-line drawable x1 y1 x2 y2 width color)
+
+  (set-color color)
+
+  (let*
+    ((stroke
+       (vector
+         x1
+         y1
+         x2
+         y2)))
+
+    (gimp-context-set-brush-size width)
+
+    (gimp-paintbrush-default
+      drawable
+      stroke)))
+
+
+;; ============================================================
+;; DRAW OUTER FRAME
+;;
+;; Entire 60 x 160 cm area becomes wood.
+;; ============================================================
+
+(define
+  (draw-frame-base drawable image)
+
+  ;; Entire frame wooden
+  (draw-rectangle-filled
+    drawable
+    image
+    FRAME-X
+    FRAME-Y
+    FRAME-WIDTH
+    FRAME-HEIGHT
+    (make-color
+      WOOD-R
+      WOOD-G
+      WOOD-B))
+
+  ;; Cut the inner opening to white
+  (draw-rectangle-filled
+    drawable
+    image
+    INNER-X
+    INNER-Y
+    INNER-WIDTH
+    INNER-HEIGHT
+    (make-color
+      BG-R
+      BG-G
+      BG-B)))
+
+
+;; ============================================================
+;; DRAW INNER +45 DEGREE STRIPS
+;;
+;; Strips originate from the left side.
+;;
+;; They are clipped by the inner rectangle selection.
+;; ============================================================
+
+(define
+  (draw-positive-diagonal-pattern drawable image)
+
+  (let*
+    ((wood
+       (make-color
+         WOOD-R
+         WOOD-G
+         WOOD-B))
+
+     ;; Start well before the inner rectangle.
+     ;; This guarantees complete diagonal coverage.
+     (start-x
+       (- INNER-X INNER-HEIGHT))
+
+     (end-x
+       (+ INNER-X INNER-WIDTH INNER-HEIGHT)))
+
+    ;; Select only the inside area.
+    (gimp-image-select-rectangle
+      image
+      CHANNEL-OP-REPLACE
+      INNER-X
+      INNER-Y
+      INNER-WIDTH
+      INNER-HEIGHT)
+
+    ;; --------------------------------------------------------
+    ;; +45 degree lines
+    ;;
+    ;; y = x + constant
+    ;;
+    ;; Integer pitch = 31 px
+    ;; --------------------------------------------------------
+
+    (let*
+      ((c-start
+         (- INNER-Y
+            INNER-X
+            INNER-HEIGHT)))
+
+      (let loop
+        ((c c-start))
+
+        (if
+          (<= c
+              (+ INNER-Y INNER-HEIGHT))
+
+          (begin
+
+            (draw-straight-line
+              drawable
+
+              start-x
+
+              (+ start-x c)
+
+              end-x
+
+              (+ end-x c)
+
+              STRIP-WIDTH
+
+              wood)
+
+            (loop
+              (+ c DIAGONAL-PITCH))))))
+
+    ;; Remove clipping selection.
+    (gimp-selection-none image)))
+
+
+;; ============================================================
+;; DRAW INNER -45 DEGREE STRIPS
+;;
+;; Strips originate from the right side.
+;;
+;; This creates the corresponding mirrored pattern.
+;; ============================================================
+
+(define
+  (draw-negative-diagonal-pattern drawable image)
+
+  (let*
+    ((wood
+       (make-color
+         WOOD-R
+         WOOD-G
+         WOOD-B))
+
+     ;; Start well beyond the inner rectangle.
+     (start-x
+       (- INNER-X INNER-HEIGHT))
+
+     (end-x
+       (+ INNER-X INNER-WIDTH INNER-HEIGHT)))
+
+    ;; Select only inner opening.
+    (gimp-image-select-rectangle
+      image
+      CHANNEL-OP-REPLACE
+      INNER-X
+      INNER-Y
+      INNER-WIDTH
+      INNER-HEIGHT)
+
+    ;; --------------------------------------------------------
+    ;; -45 degree lines
+    ;;
+    ;; y = -x + constant
+    ;;
+    ;; Same integer pitch as the +45 pattern.
+    ;; --------------------------------------------------------
+
+    (let*
+      ((c-start
+         (+ INNER-X
+            INNER-Y)))
+
+      (let loop
+        ((c (- c-start
+               INNER-HEIGHT)))
+
+        (if
+          (<= c
+              (+ INNER-X
+                 INNER-WIDTH
+                 INNER-Y
+                 INNER-HEIGHT))
+
+          (begin
+
+            (draw-straight-line
+              drawable
+
+              start-x
+
+              (- c start-x)
+
+              end-x
+
+              (- c end-x)
+
+              STRIP-WIDTH
+
+              wood)
+
+            (loop
+              (+ c DIAGONAL-PITCH))))))
+
+    ;; Remove clipping.
+    (gimp-selection-none image)))
+
+
+;; ============================================================
+;; DRAW OUTER FRAME OUTLINES
+;; ============================================================
+
+(define
+  (draw-frame-outline drawable)
+
+  (let*
+    ((c
+       (make-color
+         WOOD-LINE-R
+         WOOD-LINE-G
+         WOOD-LINE-B))
+
+     (left
+       FRAME-X)
+
+     (right
+       (+ FRAME-X FRAME-WIDTH))
+
+     (top
+       FRAME-Y)
+
+     (bottom
+       (+ FRAME-Y FRAME-HEIGHT))
+
+     (inner-left
+       INNER-X)
+
+     (inner-right
+       (+ INNER-X INNER-WIDTH))
+
+     (inner-top
+       INNER-Y)
+
+     (inner-bottom
+       (+ INNER-Y INNER-HEIGHT)))
+
+
+    ;; ========================================================
+    ;; OUTER FRAME
+    ;; ========================================================
+
+    ;; Top
+    (draw-straight-line
+      drawable
+      left
+      top
+      right
+      top
+      BASE-LINE-WIDTH
+      c)
+
+    ;; Bottom
+    (draw-straight-line
+      drawable
+      left
+      bottom
+      right
+      bottom
+      BASE-LINE-WIDTH
+      c)
+
+    ;; Left
+    (draw-straight-line
+      drawable
+      left
+      top
+      left
+      bottom
+      BASE-LINE-WIDTH
+      c)
+
+    ;; Right
+    (draw-straight-line
+      drawable
+      right
+      top
+      right
+      bottom
+      BASE-LINE-WIDTH
+      c)
+
+
+    ;; ========================================================
+    ;; INNER FRAME BORDER
+    ;; ========================================================
+
+    ;; Inner top
+    (draw-straight-line
+      drawable
+      inner-left
+      inner-top
+      inner-right
+      inner-top
+      BASE-LINE-WIDTH
+      c)
+
+    ;; Inner bottom
+    (draw-straight-line
+      drawable
+      inner-left
+      inner-bottom
+      inner-right
+      inner-bottom
+      BASE-LINE-WIDTH
+      c)
+
+    ;; Inner left
+    (draw-straight-line
+      drawable
+      inner-left
+      inner-top
+      inner-left
+      inner-bottom
+      BASE-LINE-WIDTH
+      c)
+
+    ;; Inner right
+    (draw-straight-line
+      drawable
+      inner-right
+      inner-top
+      inner-right
+      inner-bottom
+      BASE-LINE-WIDTH
+      c)))
+
+
+;; ============================================================
+;; MAIN
+;; ============================================================
+
+(define
+  (script-fu-draw-wooden-frame)
+
+  (script-fu-use-v3)
+
+  (let*
+    ((image
+       (gimp-image-new
+         IMAGE-WIDTH
+         IMAGE-HEIGHT
+         RGB))
+
+     (layer
+       (gimp-layer-new
+         image
+         "Wooden Frame"
+         IMAGE-WIDTH
+         IMAGE-HEIGHT
+         RGBA-IMAGE
+         100
+         LAYER-MODE-NORMAL)))
+
+    ;; --------------------------------------------------------
+    ;; Add layer
+    ;; --------------------------------------------------------
+
+    (gimp-image-insert-layer
+      image
+      layer
+      0
+      0)
+
+    ;; --------------------------------------------------------
+    ;; White canvas
+    ;; --------------------------------------------------------
+
+    (gimp-drawable-fill
+      layer
+      FILL-WHITE)
+
+    ;; --------------------------------------------------------
+    ;; Reset GIMP context
+    ;; --------------------------------------------------------
+
+    (gimp-context-set-defaults)
+    (gimp-context-set-default-colors)
+
+    ;; --------------------------------------------------------
+    ;; Draw solid wooden frame
+    ;; --------------------------------------------------------
+
+    (draw-frame-base
+      layer
+      image)
+
+    ;; --------------------------------------------------------
+    ;; Draw +45 degree pattern
+    ;; --------------------------------------------------------
+
+    (draw-positive-diagonal-pattern
+      layer
+      image)
+
+    ;; --------------------------------------------------------
+    ;; Draw -45 degree corresponding pattern
+    ;; --------------------------------------------------------
+
+    (draw-negative-diagonal-pattern
+      layer
+      image)
+
+    ;; --------------------------------------------------------
+    ;; Frame outlines
+    ;; --------------------------------------------------------
+
+    (draw-frame-outline
+      layer)
+
+    ;; --------------------------------------------------------
+    ;; Display result
+    ;; --------------------------------------------------------
+
+    (gimp-display-new
+      image)))
+
+
+;; ============================================================
+;; RUN
+;; ============================================================
+
+(script-fu-draw-wooden-frame)
+
+#+end_src
+
+* Renderer Python implementation
+
+#+begin_src python
+
+#!/usr/bin/python3
+#/home/emporas/repos/inventory-3d/renderers/python/wooden-frame.py
+
+import sys
+
+import gi
+
+gi.require_version("Gimp", "3.0")
+gi.require_version("Gegl", "0.4")
+
+from gi.repository import Gimp, Gegl, GLib, Babl
+
+import _geometry
+
+
+PROC_NAME = "plug-in-inventory-3d-wooden-frame"
+
+
+def _color(rgb):
+    r, g, b = rgb
+
+    color = Gegl.Color.new("white")
+
+    srgb = Babl.space("sRGB")
+
+    color.set_rgba_with_space(
+        r / 255.0,
+        g / 255.0,
+        b / 255.0,
+        1.0,
+        srgb,
+    )
+
+    return color
+
+def _set_foreground(rgb):
+    Gimp.context_set_foreground(_color(rgb))
+
+
+def _fill_rect(image, layer, rect):
+    _set_foreground(tuple(rect.color))
+
+    if not image.select_rectangle(
+        Gimp.ChannelOps.REPLACE,
+        rect.x,
+        rect.y,
+        rect.width,
+        rect.height,
+    ):
+        raise RuntimeError("Failed to select rectangle")
+
+    if not layer.edit_fill(Gimp.FillType.FOREGROUND):
+        raise RuntimeError("Failed to fill rectangle")
+
+def _stroke_line(layer, line):
+    _set_foreground(tuple(line.color))
+    Gimp.context_set_brush_size(line.width)
+
+    strokes = [
+        float(line.x1),
+        float(line.y1),
+        float(line.x2),
+        float(line.y2),
+    ]
+
+    if not Gimp.paintbrush_default(layer, strokes):
+        raise RuntimeError("Failed to paint line")
+
+def _draw_plan(image, layer, plan):
+    # Base rectangles: wood frame, then white opening.
+    for rect in plan.base_rectangles:
+        _fill_rect(image, layer, rect)
+
+    # +45 pattern — clipped by the inner opening.
+    image.select_rectangle(
+        Gimp.ChannelOps.REPLACE,
+        plan.inner.x,
+        plan.inner.y,
+        plan.inner.width,
+        plan.inner.height,
+    )
+    for line in plan.positive_diagonals:
+        _stroke_line(layer, line)
+    Gimp.Selection.none(image)
+
+    # -45 pattern — clipped by the inner opening.
+    image.select_rectangle(
+        Gimp.ChannelOps.REPLACE,
+        plan.inner.x,
+        plan.inner.y,
+        plan.inner.width,
+        plan.inner.height,
+    )
+    for line in plan.negative_diagonals:
+        _stroke_line(layer, line)
+    Gimp.Selection.none(image)
+
+    # Outer and inner borders.
+    for line in plan.outlines:
+        _stroke_line(layer, line)
+
+
+def run(procedure, run_mode, image, drawables, config, data):
+    del run_mode, image, drawables, config, data
+
+    try:
+        plan = _geometry.build_wooden_frame()
+
+        print("=== inventory-3d wooden frame ===")
+        print("Python:", sys.version)
+        print("Python executable:", sys.executable)
+        print("Rust module:", _geometry)
+        print(
+            "Canvas:",
+            plan.canvas.width,
+            "x",
+            plan.canvas.height,
+        )
+        print(
+            "Frame:",
+            plan.frame.width,
+            "x",
+            plan.frame.height,
+        )
+        print(
+            "Inner:",
+            plan.inner.width,
+            "x",
+            plan.inner.height,
+        )
+        print("Strip width:", plan.strip_width)
+        print("Diagonal pitch:", plan.diagonal_pitch)
+        print(
+            "Generated:",
+            len(plan.positive_diagonals),
+            "+45 lines,",
+            len(plan.negative_diagonals),
+            "-45 lines,",
+            len(plan.outlines),
+            "outline lines",
+        )
+
+        new_image = Gimp.Image.new(
+            plan.canvas.width,
+            plan.canvas.height,
+            Gimp.ImageBaseType.RGB,
+        )
+
+        layer = Gimp.Layer.new(
+            new_image,
+            "Wooden Frame",
+            plan.canvas.width,
+            plan.canvas.height,
+            Gimp.ImageType.RGBA_IMAGE,
+            100.0,
+            Gimp.LayerMode.NORMAL,
+        )
+        new_image.insert_layer(layer, None, 0)
+
+        Gimp.context_push()
+        try:
+            Gimp.context_set_defaults()
+            Gimp.context_set_default_colors()
+            # Start with a white layer like the original Script-Fu.
+            if not layer.edit_fill(Gimp.FillType.WHITE):
+                raise RuntimeError("Failed to initialize white layer")
+
+            _draw_plan(new_image, layer, plan)
+        finally:
+            Gimp.Selection.none(new_image)
+            Gimp.context_pop()
+
+        Gimp.Display.new(new_image)
+
+        return procedure.new_return_values(
+            Gimp.PDBStatusType.SUCCESS,
+            None,
+        )
+
+    except Exception as exc:
+        print(f"inventory-3d error: {exc}", file=sys.stderr)
+        return procedure.new_return_values(
+            Gimp.PDBStatusType.EXECUTION_ERROR,
+            GLib.Error(str(exc)),
+        )
+
+
+class Inventory3D(Gimp.PlugIn):
+    def do_query_procedures(self):
+        return [PROC_NAME]
+
+    def do_create_procedure(self, name):
+        procedure = Gimp.ImageProcedure.new(
+            self,
+            name,
+            Gimp.PDBProcType.PLUGIN,
+            run,
+            None,
+        )
+
+        # This plug-in creates a new image and does not require a
+        # selected drawable in the current image.
+        procedure.set_image_types("*")
+        procedure.set_sensitivity_mask(
+            Gimp.ProcedureSensitivityMask.DRAWABLE
+            | Gimp.ProcedureSensitivityMask.NO_DRAWABLES
+        )
+
+        procedure.set_menu_label("_Wooden Frame")
+        procedure.add_menu_path("<Image>/Filters/Inventory 3D")
+
+        procedure.set_documentation(
+            "Wooden Frame",
+            "Generate the rectangular wooden frame using Rust geometry.",
+            None,
+        )
+
+        procedure.set_attribution(
+            "emporas",
+            "emporas",
+            "2026",
+        )
+
+        return procedure
+
+Gimp.main(Inventory3D.__gtype__, sys.argv)
+
+#+end_src
+
+* Runner Python implementation
+
+#+begin_src python
+
+#+end_src
+
+
+* Rust Code
+
+#+begin_src rust
+
+/* /home/emporas/repos/inventory-3d/rust/src/geometry.rs */
+
+use nalgebra::{Point2, Vector2};
+
+#[derive(Clone, Copy, Debug)]
+pub struct Bounds {
+    pub left: i32,
+    pub top: i32,
+    pub right: i32,
+    pub bottom: i32,
+}
+
+impl Bounds {
+    pub fn from_xywh(x: i32, y: i32, width: i32, height: i32) -> Self {
+        Self {
+            left: x,
+            top: y,
+            right: x + width,
+            bottom: y + height,
+        }
+    }
+
+    pub fn width(&self) -> i32 {
+        self.right - self.left
+    }
+
+    pub fn height(&self) -> i32 {
+        self.bottom - self.top
+    }
+
+    pub fn centre(&self) -> Point2<f64> {
+        Point2::new(
+            f64::from(self.left + self.right) * 0.5,
+            f64::from(self.top + self.bottom) * 0.5,
+        )
+    }
+}
+
+pub fn positive_diagonal(
+    c: i32,
+    x_start: i32,
+    x_end: i32,
+) -> (Point2<f64>, Point2<f64>) {
+    let direction = Vector2::new(1.0_f64, 1.0_f64).normalize();
+    let _normal = Vector2::new(-direction.y, direction.x);
+
+    (
+        Point2::new(
+            f64::from(x_start),
+            f64::from(x_start + c),
+        ),
+        Point2::new(
+            f64::from(x_end),
+            f64::from(x_end + c),
+        ),
+    )
+}
+
+pub fn negative_diagonal(
+    c: i32,
+    x_start: i32,
+    x_end: i32,
+) -> (Point2<f64>, Point2<f64>) {
+    let direction = Vector2::new(1.0_f64, -1.0_f64).normalize();
+    let _normal = Vector2::new(-direction.y, direction.x);
+
+    (
+        Point2::new(
+            f64::from(x_start),
+            f64::from(c - x_start),
+        ),
+        Point2::new(
+            f64::from(x_end),
+            f64::from(c - x_end),
+        ),
+    )
+}
+
+/* /home/emporas/repos/inventory-3d/rust/src/primitives.rs */
+
+use pyo3::prelude::*;
+
+pub type Rgb8 = (u8, u8, u8);
+
+#[pyclass]
+#[derive(Clone, Copy, Debug)]
+pub struct RectSpec {
+    #[pyo3(get)]
+    pub x: i32,
+    #[pyo3(get)]
+    pub y: i32,
+    #[pyo3(get)]
+    pub width: i32,
+    #[pyo3(get)]
+    pub height: i32,
+    #[pyo3(get)]
+    pub color: Rgb8,
+}
+
+#[pymethods]
+impl RectSpec {
+    #[new]
+    pub fn new(
+        x: i32,
+        y: i32,
+        width: i32,
+        height: i32,
+        color: Rgb8,
+    ) -> Self {
+        Self {
+            x,
+            y,
+            width,
+            height,
+            color,
+        }
+    }
+}
+
+#[pyclass]
+#[derive(Clone, Copy, Debug)]
+pub struct LineSpec {
+    #[pyo3(get)]
+    pub x1: f64,
+    #[pyo3(get)]
+    pub y1: f64,
+    #[pyo3(get)]
+    pub x2: f64,
+    #[pyo3(get)]
+    pub y2: f64,
+    #[pyo3(get)]
+    pub width: i32,
+    #[pyo3(get)]
+    pub color: Rgb8,
+}
+
+#[pymethods]
+impl LineSpec {
+    #[new]
+    pub fn new(
+        x1: f64,
+        y1: f64,
+        x2: f64,
+        y2: f64,
+        width: i32,
+        color: Rgb8,
+    ) -> Self {
+        Self {
+            x1,
+            y1,
+            x2,
+            y2,
+            width,
+            color,
+        }
+    }
+}
+use pyo3::prelude::*;
+
+use crate::primitives::Rgb8;
+
+pub const CANVAS_WIDTH: i32 = 1080;
+pub const CANVAS_HEIGHT: i32 = 1080;
+
+pub const FRAME_WIDTH: i32 = 360;
+pub const FRAME_HEIGHT: i32 = 960;
+
+pub const BORDER_WIDTH: i32 = 24;
+pub const STRIP_WIDTH: i32 = 11;
+pub const BASE_LINE_WIDTH: i32 = 6;
+
+pub const WOOD: Rgb8 = (196, 145, 85);
+pub const WOOD_LINE: Rgb8 = (96, 62, 30);
+pub const BG: Rgb8 = (255, 255, 255);
+
+#[pyclass]
+#[derive(Clone, Copy, Debug)]
+pub struct FrameParams {
+    #[pyo3(get, set)]
+    pub canvas_width: i32,
+    #[pyo3(get, set)]
+    pub canvas_height: i32,
+    #[pyo3(get, set)]
+    pub frame_width: i32,
+    #[pyo3(get, set)]
+    pub frame_height: i32,
+    #[pyo3(get, set)]
+    pub border_width: i32,
+    #[pyo3(get, set)]
+    pub strip_width: i32,
+    #[pyo3(get, set)]
+    pub base_line_width: i32,
+}
+
+impl FrameParams {
+    pub fn defaults() -> Self {
+        Self {
+            canvas_width: CANVAS_WIDTH,
+            canvas_height: CANVAS_HEIGHT,
+            frame_width: FRAME_WIDTH,
+            frame_height: FRAME_HEIGHT,
+            border_width: BORDER_WIDTH,
+            strip_width: STRIP_WIDTH,
+            base_line_width: BASE_LINE_WIDTH,
+        }
+    }
+}
+
+#[pymethods]
+impl FrameParams {
+    #[new]
+    #[pyo3(signature = (
+        canvas_width = CANVAS_WIDTH,
+        canvas_height = CANVAS_HEIGHT,
+        frame_width = FRAME_WIDTH,
+        frame_height = FRAME_HEIGHT,
+        border_width = BORDER_WIDTH,
+        strip_width = STRIP_WIDTH,
+        base_line_width = BASE_LINE_WIDTH,
+    ))]
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        canvas_width: i32,
+        canvas_height: i32,
+        frame_width: i32,
+        frame_height: i32,
+        border_width: i32,
+        strip_width: i32,
+        base_line_width: i32,
+    ) -> Self {
+        Self {
+            canvas_width,
+            canvas_height,
+            frame_width,
+            frame_height,
+            border_width,
+            strip_width,
+            base_line_width,
+        }
+    }
+
+    /// The perpendicular strip-plus-gap pitch projected onto x/y
+    /// for a 45 degree family, rounded to an integer pixel pitch.
+    pub fn diagonal_pitch(&self) -> i32 {
+        (
+            2.0
+                * f64::from(self.strip_width)
+                * 2.0_f64.sqrt()
+        )
+        .round() as i32
+    }
+}
+
+/* /home/emporas/repos/inventory-3d/rust/src/frame.rs */
+
+use crate::geometry::{
+    negative_diagonal,
+    positive_diagonal,
+    Bounds,
+};
+use crate::params::{FrameParams, BG, WOOD, WOOD_LINE};
+use crate::primitives::{LineSpec, RectSpec};
+
+use nalgebra::Point2;
+use pyo3::prelude::*;
+
+#[pyclass]
+#[derive(Clone, Debug)]
+pub struct FramePlan {
+    #[pyo3(get)]
+    pub canvas: RectSpec,
+    #[pyo3(get)]
+    pub frame: RectSpec,
+    #[pyo3(get)]
+    pub inner: RectSpec,
+    #[pyo3(get)]
+    pub base_rectangles: Vec<RectSpec>,
+    #[pyo3(get)]
+    pub positive_diagonals: Vec<LineSpec>,
+    #[pyo3(get)]
+    pub negative_diagonals: Vec<LineSpec>,
+    #[pyo3(get)]
+    pub outlines: Vec<LineSpec>,
+    #[pyo3(get)]
+    pub diagonal_pitch: i32,
+    #[pyo3(get)]
+    pub strip_width: i32,
+}
+
+impl FramePlan {
+    pub fn build(params: &FrameParams) -> Self {
+        assert!(params.canvas_width > 0);
+        assert!(params.canvas_height > 0);
+        assert!(params.frame_width > 0);
+        assert!(params.frame_height > 0);
+        assert!(params.border_width >= 0);
+        assert!(params.frame_width > 2 * params.border_width);
+        assert!(params.frame_height > 2 * params.border_width);
+        assert!(params.strip_width > 0);
+        assert!(params.base_line_width > 0);
+
+        let frame_x =
+            (params.canvas_width - params.frame_width) / 2;
+        let frame_y =
+            (params.canvas_height - params.frame_height) / 2;
+
+        let frame_bounds = Bounds::from_xywh(
+            frame_x,
+            frame_y,
+            params.frame_width,
+            params.frame_height,
+        );
+
+        let inner_bounds = Bounds::from_xywh(
+            frame_x + params.border_width,
+            frame_y + params.border_width,
+            params.frame_width - 2 * params.border_width,
+            params.frame_height - 2 * params.border_width,
+        );
+
+        let canvas = RectSpec::new(
+            0,
+            0,
+            params.canvas_width,
+            params.canvas_height,
+            BG,
+        );
+
+        let frame = RectSpec::new(
+            frame_bounds.left,
+            frame_bounds.top,
+            frame_bounds.width(),
+            frame_bounds.height(),
+            WOOD,
+        );
+
+        let inner = RectSpec::new(
+            inner_bounds.left,
+            inner_bounds.top,
+            inner_bounds.width(),
+            inner_bounds.height(),
+            BG,
+        );
+
+        let base_rectangles = vec![frame, inner];
+
+        let start_x =
+            inner_bounds.left - inner_bounds.height();
+        let end_x =
+            inner_bounds.right + inner_bounds.height();
+
+        let pitch = params.diagonal_pitch();
+
+        // Same integer c range and y = x + c construction as Script-Fu.
+        let c_start =
+            inner_bounds.top
+                - inner_bounds.left
+                - inner_bounds.height();
+        let c_end =
+            inner_bounds.top + inner_bounds.height();
+
+        let mut positive_diagonals = Vec::new();
+        let mut c = c_start;
+
+        while c <= c_end {
+            let (a, b) =
+                positive_diagonal(c, start_x, end_x);
+
+            positive_diagonals.push(LineSpec::new(
+                a.x,
+                a.y,
+                b.x,
+                b.y,
+                params.strip_width,
+                WOOD,
+            ));
+
+            c += pitch;
+        }
+
+        // Same integer c range and y = -x + c construction as Script-Fu.
+        let c_start_neg =
+            inner_bounds.left
+                + inner_bounds.top
+                - inner_bounds.height();
+        let c_end_neg =
+            inner_bounds.left
+                + inner_bounds.width()
+                + inner_bounds.top
+                + inner_bounds.height();
+
+        let mut negative_diagonals = Vec::new();
+        let mut c = c_start_neg;
+
+        while c <= c_end_neg {
+            let (a, b) =
+                negative_diagonal(c, start_x, end_x);
+
+            negative_diagonals.push(LineSpec::new(
+                a.x,
+                a.y,
+                b.x,
+                b.y,
+                params.strip_width,
+                WOOD,
+            ));
+
+            c += pitch;
+        }
+
+        let outlines = build_outlines(
+            &frame_bounds,
+            &inner_bounds,
+            params.base_line_width,
+        );
+
+        let _frame_centre: Point2<f64> =
+            frame_bounds.centre();
+        let _inner_centre: Point2<f64> =
+            inner_bounds.centre();
+
+        Self {
+            canvas,
+            frame,
+            inner,
+            base_rectangles,
+            positive_diagonals,
+            negative_diagonals,
+            outlines,
+            diagonal_pitch: pitch,
+            strip_width: params.strip_width,
+        }
+    }
+}
+
+fn build_outlines(
+    frame: &Bounds,
+    inner: &Bounds,
+    width: i32,
+) -> Vec<LineSpec> {
+    let mut lines = Vec::with_capacity(8);
+
+    // Outer frame.
+    lines.push(LineSpec::new(
+        f64::from(frame.left),
+        f64::from(frame.top),
+        f64::from(frame.right),
+        f64::from(frame.top),
+        width,
+        WOOD_LINE,
+    ));
+    lines.push(LineSpec::new(
+        f64::from(frame.left),
+        f64::from(frame.bottom),
+        f64::from(frame.right),
+        f64::from(frame.bottom),
+        width,
+        WOOD_LINE,
+    ));
+    lines.push(LineSpec::new(
+        f64::from(frame.left),
+        f64::from(frame.top),
+        f64::from(frame.left),
+        f64::from(frame.bottom),
+        width,
+        WOOD_LINE,
+    ));
+    lines.push(LineSpec::new(
+        f64::from(frame.right),
+        f64::from(frame.top),
+        f64::from(frame.right),
+        f64::from(frame.bottom),
+        width,
+        WOOD_LINE,
+    ));
+
+    // Inner opening.
+    lines.push(LineSpec::new(
+        f64::from(inner.left),
+        f64::from(inner.top),
+        f64::from(inner.right),
+        f64::from(inner.top),
+        width,
+        WOOD_LINE,
+    ));
+    lines.push(LineSpec::new(
+        f64::from(inner.left),
+        f64::from(inner.bottom),
+        f64::from(inner.right),
+        f64::from(inner.bottom),
+        width,
+        WOOD_LINE,
+    ));
+    lines.push(LineSpec::new(
+        f64::from(inner.left),
+        f64::from(inner.top),
+        f64::from(inner.left),
+        f64::from(inner.bottom),
+        width,
+        WOOD_LINE,
+    ));
+    lines.push(LineSpec::new(
+        f64::from(inner.right),
+        f64::from(inner.top),
+        f64::from(inner.right),
+        f64::from(inner.bottom),
+        width,
+        WOOD_LINE,
+    ));
+
+    lines
+}
+//! Rust geometry engine for the GIMP wooden-frame plug-in.
+//!
+//! Python is intentionally a thin GIMP orchestration layer.
+//! Geometry and layout stay in Rust and use nalgebra.
+
+/* /home/emporas/repos/inventory-3d/rust/src/lib.rs */
+
+mod frame;
+mod geometry;
+mod params;
+mod primitives;
+
+use frame::FramePlan;
+use params::FrameParams;
+use primitives::{LineSpec, RectSpec};
+
+use pyo3::prelude::*;
+
+#[pymodule]
+fn _geometry(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<FrameParams>()?;
+    m.add_class::<RectSpec>()?;
+    m.add_class::<LineSpec>()?;
+    m.add_class::<FramePlan>()?;
+    m.add_function(wrap_pyfunction!(build_wooden_frame, m)?)?;
+    Ok(())
+}
+
+#[pyfunction]
+#[pyo3(signature = (params = None))]
+fn build_wooden_frame(
+    params: Option<FrameParams>,
+) -> FramePlan {
+    let params =
+        params.unwrap_or_else(FrameParams::defaults);
+
+    FramePlan::build(&params)
+}
+
+#+end_src
+
+* Toml files
+
+#+begin_src toml
+
+# /home/emporas/repos/inventory-3d/rust/pyproject.toml
+
+[build-system]
+requires = ["maturin>=1.8,<2"]
+build-backend = "maturin"
+
+[project]
+name = "inventory-3d-geometry"
+version = "0.1.0"
+requires-python = ">=3.9"
+
+[tool.maturin]
+bindings = "pyo3"
+strip = true
+module-name = "_geometry"
+
+#+end_src
+
+#+begin_src toml
+
+# /home/emporas/repos/inventory-3d/rust/Cargo.toml
+[package]
+name = "inventory-3d-geometry"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "_geometry"
+crate-type = ["cdylib"]
+
+[dependencies]
+nalgebra = "0.34"
+pyo3 = { version = "0.25", features = ["abi3-py39", "extension-module"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = "symbols"
+
+#+end_src
