@@ -1,4 +1,6 @@
 #!/usr/bin/env gimp-script-fu-interpreter-3.0
+#!/home/emporas/repos/inventory-3d/gimp-plugin/inventory-3d/inventory-3d.py
+
 ;!#
 
 ;; ============================================================

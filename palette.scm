@@ -7,17 +7,16 @@
 ;;   0.80 m x 1.20 m
 ;;   270 px x 405 px
 ;;
-;; EXISTING FIVE PLANKS (ROTATED 90 DEGREES)
+;; FIVE PLANKS (ROTATED 90 DEGREES)
 ;;   Original horizontal planks are now vertical.
 ;;
-;; THREE NEW PERPENDICULAR PLANKS
+;; THREE PERPENDICULAR PLANKS
 ;;   Full pallet width, placed at the top, middle, and bottom.
 ;;   Each plank is 14 cm thick = 47 px.
 ;;
 ;; The spaces between the original planks are WHITE and transparent
 ;; to the wood, matching the white background.
 ;;
-;; No floating-point coordinate values are used.
 ;; ============================================================
 
 
